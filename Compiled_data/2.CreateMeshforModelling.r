@@ -36,7 +36,7 @@ survey = as_tibble(subset(aT,z>0))
 survey$of = log(survey$OFFSET)
 
 spde <- make_mesh(survey, xy_cols = c("X1000", "Y1000"),
-                  cutoff = 18)
+                  cutoff = 12)
 plot(spde)
 #n vertices
 spde$mesh$n
@@ -61,11 +61,12 @@ k3 <- Hmisc::wtd.quantile(survey$z, weights=survey$Legal, probs = seq(0, 1, len 
 
 k <- 4 # 5 basis splines
 k4 <- Hmisc::wtd.quantile(survey$z, weights=survey$Legal, probs = seq(0, 1, len = k)[-c(1,k)]) ##quantiles of depth weighted by catch, to have splines at depth where catch located
-
+i = which(survey$SOURCE=='Snow crab survey')
+survey$Legal[i] = survey$Lobster[i]
 m <- sdmTMB(
   data = survey,
   formula = Legal ~ 0+SOURCE, 
-  offset = survey$off,
+  offset = survey$of,
   mesh = bspde,
   time_varying = ~ 1 + bs(z, knots=k3, degree=3, intercept=FALSE),
   time_varying_type = "rw0",
@@ -76,77 +77,54 @@ m <- sdmTMB(
   
 )
 
+s_m = simulate(m,nsim=500,type='mle-mvn')
+r_m = sdmTMB::dharma_residuals(s_m,m,return_DHARMa=T)
+plot(r_m)
+DHARMa::testResiduals(r_m)
+DHARMa::testSpatialAutocorrelation(r_m,x=survey$X1000,y=survey$Y1000)
+DHARMa::testZeroInflation(r_m)
 
-survey$LO = log(survey$OFFSET)
-fit = sdmTMB(Legal~
-               s(lZ,k=5) + s(DYEAR,k=3),
-             data=as_tibble(survey),
-             offset = 'LO',
-             time=YEAR, 
-             mesh=bspde,
-             extra_time = 17,
-             family=tweedie(link='log'),
-             spatial='on',
-             spatiotemporal='ar1')
 
-go =predict(fit) 
-go$pred = fit$family$linkinv(go$est)
+survey$resids <- residuals(m) # randomized quantile residuals
+qqnorm(survey$resids)
+qqline(survey$resids)
 
 
 
-rL = readRDS(file.path( project.datadirectory("bio.lobster"), "data","maps","LFAPolysSF.rds"))
-st_crs(rL) <- 4326
-crs_utm20 <- 32620
-#rL = rL[-which(!(st_is_valid(rL))),]
-rL <- suppressWarnings(suppressMessages(
-  st_crop(rL,
-          c(xmin = -68, ymin = 41, xmax = -56.5, ymax = 47.5))))
-rL <- st_transform(rL, crs_utm20)
-rL = st_union(rL)
+ff = readRDS(file.path( project.datadirectory("bio.lobster"), "data","maps","bathy_LFAPolysSF.rds"))
+ff = subset(ff,z<max(survey$z) & z>5)
+ff$X1000 = st_coordinates(ff)[,1]
+ff$Y1000 = st_coordinates(ff)[,2]
 
-baT <- baXY %>% st_as_sf(crs = 4326, coords = c("lon", "lat")) %>%
-  st_crop(c(xmin = -68, ymin = 42, xmax = -57.5, ymax = 47)) %>%		
-  st_transform(crs_utm20)				
+yy = unique(survey$YEAR)
+o = list()
+for(i in 1:length(yy)){
+  f = ff
+  f$YEAR=yy[i]
+  o[[i]]=f
+}
+ff = do.call(rbind,o)
 
-baT = subset(baT,z>0 & z<400)
-  #x
-b = st_coordinates(baT)
-baT$X1000 = b[,1]/1000
-baT$Y1000 = b[,2]/1000
-baT$X = b[,1]
-baT$Y = b[,2]
-baT$Depth = baT$z
+ff$SOURCE='ILTS'
+f = as_tibble(ff)
 
-ba = baT[,c('X','Y','Depth','X1000','Y1000')]
-ba$geometry <- NULL
-be = as.data.frame(sapply(ba,rep.int,27))
-be$W = rep(0:26,each=dim(ba)[1])
-be$geometry = NULL
-be$lZ = log(be$Depth)
-g = predict(fit,newdata=be)
+g = predict(m,newdata=f,offset=rep(log(1000000),times=nrow(f)))
 
-g1 = fit$family$linkinv(g)
+g1 = m$family$linkinv(g$est)
 
-be$pred = apply(g1,1,median)
-be$sd = apply(g1,1,sd)
-be$lQ = apply(g1,1,quantile,0.25)
-be$uQ = apply(g1,1,quantile,0.75)
-
-
-
-gsf = st_as_sf(be,coords = c("X","Y"),crs=32620,remove=F)
+f$pred = g1
+gsf = st_as_sf(f,coords = c("X1000","Y1000"),crs=32620,remove=F)
 
 
 
 #Maps
 png('Figures/ModelOutput/lobstersdmTMBwk1-12.png', width = 10, height = 12,units='in',pointsize=12, res=300,type='cairo')
-mm = c(0.001,max(gsf$pred))
-ggplot(subset(gsf,W %in% 1)) +
+mm = c(0.00001,quantile(gsf$pred,0.999))
+ggplot(subset(gsf,YEAR==2016)) +
   geom_sf(aes(fill=pred,color=pred)) + 
-  scale_fill_viridis_c(trans='log',limits=mm) +
-  scale_color_viridis_c(trans='log',limits=mm) +
-  facet_wrap(~W) +
-  geom_sf(data=rL,size=1,colour='black',fill=NA)+
+  scale_fill_viridis_c(limits=mm) +
+  scale_color_viridis_c(limits=mm) +
+#  geom_sf(data=rL,size=1,colour='black',fill=NA)+
   theme( axis.ticks.x = element_blank(),
          axis.text.x = element_blank(),
          axis.title.x = element_blank(),
