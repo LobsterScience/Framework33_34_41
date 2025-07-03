@@ -190,28 +190,47 @@ ca <- cdas %>%
   mutate(DOS = as.integer(DATE_FISHED - start)/24/60/60+1)
 ca$fyr = as.factor(ca$SYEAR)
 ca$leffort = log(ca$NUM_OF_TRAPS)
-m3 = gam(WEIGHT_KG~fyr+s(DOS,by=fyr)+s(bT)+LFA+offset(leffort),data=ca,family = 'nb') #best by AIC
-saveRDS(m3,file=file.path(project.datadirectory('Framework_LFA33_34_41'),'CPUEModelM3.rds'))
+m3 = gam(WEIGHT_KG~fyr+s(DOS,by=fyr)+s(bT)+LFA+offset(leffort),data=ca,family = 'nb')
+
+m4 = gam(WEIGHT_KG~fyr+s(DOS,by=fyr)+s(DOS,by=GRID_NO)+GRID_NO+s(bT)+LFA+offset(leffort),data=ca,family = 'nb')
+
+
+saveRDS(list(ca,m3),file=file.path(project.datadirectory('Framework_LFA33_34_41'),'CPUEModelM3.rds'))
 m3 = readRDS(file=file.path(project.datadirectory('Framework_LFA33_34_41'),'CPUEModelM3.rds'))
 
-da = unique(ca$DOY)
 
-h = emmeans::emmeans(m3,~fyr+DOS+LFA,offset=0,type='response',data=ca,at=list(time=c(1:60,160:292)))
+#weighted marginal means
+ind = aggregate(SD_LOG_ID~DOS+SYEAR+LFA,data=aT,FUN=function(x) length(unique(x)))
+ind1 = aggregate(SD_LOG_ID~SYEAR+LFA,data=ind,FUN=sum)
+names(ind1)[3] = 'SumTrips'
+ind = merge(ind,ind1)
+ind$prop = ind$SD_LOG_ID/ind$SumTrips
+ind$fyr=as.factor(ind$SYEAR)
+
+da = da[order(round(da))]
+da = unique(da)
+
+h = emmeans::emmeans(m3,~fyr+DOS+LFA,offset=0,type='response',data=ca,at=list(DOS=da))
 dmm = as.data.frame(summary(h))
 dmm = merge(dmm,ind)
 usm = sum(dmm$SD_LOG_ID)
-dmm$Year = as.numeric(as.character(dmm$fYear))
+dmm$Year = as.numeric(as.character(dmm$fyr))
+jj=33:34
 ii = unique(dmm$Year)
-dom = data.frame(SYEAR=NA,wse=NA,wemm=NA)
+dom = data.frame(SYEAR=NA,LFA=NA, wse=NA,wemm=NA)
+m=0
 for(i in 1:length(ii)){
-  z = subset(dmm,Year==ii[i])
+  for(j in 1:length(jj)){
+    m=m+1
+  z = subset(dmm,Year==ii[i] & LFA==jj[j])
   usm = sum(z$SD_LOG_ID)
-  dom[i,'wse'] = sqrt(sum((z$SD_LOG_ID/usm)^2  * (z$SE^2)))
-  dom[i,'wemm'] = sum(z$SD_LOG_ID/usm*z$response) 
-  dom[i,'SYEAR'] = ii[i]
+  dom[m,'wse'] = sqrt(sum((z$SD_LOG_ID/usm)^2  * (z$SE^2)))
+  dom[m,'wemm'] = sum(z$SD_LOG_ID/usm*z$response) 
+  dom[m,'SYEAR'] = ii[i]
+  dom[m,'LFA'] = jj[j]
+  }
 }
-dom$Model = 'BxDRV'
-hmm=dom
-
+dom$Model = 'm3'
+ggplot(dom,aes(x=SYEAR,y=wemm,colour=as.character(LFA)))+geom_point()+geom_smooth()
 
 
