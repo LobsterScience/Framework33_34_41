@@ -56,7 +56,10 @@ bmap = ggplot()+
 
 #digitized data
 aab =read.csv( file.path(project.datadirectory('bio.lobster'),'data','inputs','Tagging','Campbell1984_tags.csv'))
+aab$Source='Campbell84'
 aac = read.csv( file.path(project.datadirectory('bio.lobster'),'data','inputs','Tagging','Campbell1985_tags.csv'))
+aac$Source='Campbell85'
+
 aa = bind_rows(aac,aab)
 a1 = subset(aa,select=c(TAGNO,Release_X,Release_Y))
 a2 = subset(aa,select=c(TAGNO,Recapture_X,Recapture_Y))
@@ -76,6 +79,7 @@ names(x1) = names(x2) = c('TAGNUM','TAGTYPE','DATE','LAT','LON','CL','SEX','EGG'
 
 xa = bind_rows(x1,x2)
 xa$TAGNUM = as.character(xa$TAGNUM)
+xa$Source = 'CrTags'
 xa = bind_rows(xa,a)
 
 xa$LON = ifelse(xa$LON>0,  xa$LON*-1,xa$LON)

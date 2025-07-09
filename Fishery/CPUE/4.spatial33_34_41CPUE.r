@@ -49,6 +49,8 @@ gtot = subset(gtots,LFA %in% c(33,34,41))
 gtot$dist_to_shore = as.numeric(st_distance(gtot,coa))/1000
 gtot$X <- st_coordinates(gtot)[,1]
 gtot$Y <- st_coordinates(gtot)[,2]
+gtot = subset(gtot,X< -60.5)
+goo = gtot
 gtot$geometry <- NULL
 
 logs = subset(aT,select=c(LFA, GRID_NO, SYEAR, DATE_FISHED,WEIGHT_KG,NUM_OF_TRAPS,DOY))
@@ -190,6 +192,7 @@ ca <- cdas %>%
   mutate(DOS = as.integer(DATE_FISHED - start)/24/60/60+1)
 ca$fyr = as.factor(ca$SYEAR)
 ca$leffort = log(ca$NUM_OF_TRAPS)
+ca$fGRID_NO = as.factor(ca$GRID_NO)
 m3 = gam(WEIGHT_KG~fyr+s(DOS,by=fyr)+s(bT)+LFA+offset(leffort),data=ca,family = 'nb')
 
 m4 = gam(WEIGHT_KG~fyr+s(DOS,by=fyr)+s(DOS,by=GRID_NO)+GRID_NO+s(bT)+LFA+offset(leffort),data=ca,family = 'nb')
@@ -234,3 +237,53 @@ dom$Model = 'm3'
 ggplot(dom,aes(x=SYEAR,y=wemm,colour=as.character(LFA)))+geom_point()+geom_smooth()
 
 
+###########sdmtmb
+
+require(sdmTMB)
+require(splines)
+crs_utm20 <- 32620
+gs <- st_transform(goo, crs_utm20)
+st_geometry(gs) = st_geometry(gs)/1000
+st_crs(gs) <- crs_utm20
+gs$X = st_coordinates(gs)[,1]
+gs$Y = st_coordinates(gs)[,2]
+gto = as_tibble(gs)
+ns_coast =readRDS(file.path( bio.directory, "bio.lobster.data","mapping_data","CoastSF.rds"))
+st_crs(ns_coast) <- 4326 # 'WGS84'; necessary on some installs
+ns_coast <- st_transform(ns_coast, crs_utm20)
+st_geometry(ns_coast) = st_geometry(ns_coast)/1000
+st_crs(ns_coast) <- crs_utm20
+
+ca=m3[[1]]
+ca = subset(ca, X< -60.5)
+cas = st_as_sf(ca,coords = c('X','Y'),crs=4326)
+cas = st_transform(cas,crs=crs_utm20)
+st_geometry(cas) = st_geometry(cas)/1000
+st_crs(cas) <- crs_utm20
+cas$X = st_coordinates(cas)[,1]
+cas$Y = st_coordinates(cas)[,2]
+ca = as_tibble(cas)
+
+gtos = subset(gto, GRID_NO %in% unique(ca$GRID_NO))
+
+mes = sdmTMB::make_mesh(ca,xy_cols = c('X','Y'),n_knots=nrow(gtos)-1)
+
+
+# Add on the barrier mesh component:
+bspde <- sdmTMBextra::add_barrier_mesh(
+  mes, ns_coast, range_fraction = .1,
+  proj_scaling = 1, plot = TRUE
+)
+
+m4 = sdmTMB(WEIGHT_KG~ 0+
+              s(bT)+s(DOS)+fyr,
+            offset = 'leffort',
+            data=ca,
+            family = nbinom2(link='log') ,
+#            time_varying = ~ 1 + bs(DOS, degree=6, intercept=T),
+#            time_varying_type = "rw0",
+            mesh = bspde,
+            spatial='on',
+#            time='SYEAR',
+ #           spatiotemporal='AR1'
+)
