@@ -136,6 +136,20 @@ ggplot(subset(gsf,YEAR==2016)) +
 dev.off()
 
 
+survey$LegalPA = ifelse(survey$Legal>0,1,0)
+m1 = sdmTMB(
+         data = survey,
+	   formula = LegalPA ~ 0+SOURCE,
+	   offset = survey$of,
+	     mesh = bspde,
+	     time_varying = ~ 1 + bs(z, knots=k3, degree=3, intercept=FALSE),
+	       time_varying_type = "rw0",
+	       spatial = "on",
+	         family =  binomial(link = "logit"),
+	         time = "YEAR",
+		   spatiotemporal = "ar1"
+		 
+		 )
 
 saveRDS(list(data=aT,grid=bspde,preds=be),file='results/dataForLFA33-35.rds')
 

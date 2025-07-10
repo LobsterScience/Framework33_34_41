@@ -1,4 +1,4 @@
-#Create Mesh Survey Data only
+:q#Create Mesh Survey Data only
 
 require(tidyr)
 require(sdmTMB)
@@ -41,7 +41,7 @@ plot(spde)
 #n vertices
 spde$mesh$n
 
-# Add on the barrier mesh component:
+#Add on the barrier mesh component:
 bspde <- add_barrier_mesh(
   spde, cC, range_fraction = .1,
   proj_scaling = 1, plot = TRUE
