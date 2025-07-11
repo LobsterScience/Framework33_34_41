@@ -1,4 +1,4 @@
-:q#Create Mesh Survey Data only
+#Create Mesh Survey Data only
 
 require(tidyr)
 require(sdmTMB)
@@ -61,7 +61,8 @@ k3 <- Hmisc::wtd.quantile(survey$z, weights=survey$Legal, probs = seq(0, 1, len 
 
 k <- 4 # 5 basis splines
 k4 <- Hmisc::wtd.quantile(survey$z, weights=survey$Legal, probs = seq(0, 1, len = k)[-c(1,k)]) ##quantiles of depth weighted by catch, to have splines at depth where catch located
-
+survey$IDS = "I"
+survey = cvSpaceTimeFolds(survey,idCol = 'IDS', nfolds=5)
 m <- sdmTMB(
   data = survey,
   formula = Legal ~ 0+SOURCE, 
@@ -73,6 +74,33 @@ m <- sdmTMB(
   time = "YEAR",
   spatiotemporal = "ar1"
 )
+
+m1 <- sdmTMB(
+	      data = survey,
+	        formula = Legal ~ SOURCE+ s(z),
+	        offset = survey$of,
+		  mesh = bspde,
+		  time_varying_type = "rw0",
+		    spatial = "on",
+		    family =  tweedie(link = "log"),
+		      time = "YEAR",
+		      spatiotemporal = "ar1"
+		      )
+
+m1_cv <- sdmTMB_cv(
+	          data = survey,
+		  formula = Legal ~ SOURCE+ s(z),
+		  offset = 'of',
+		  mesh = bspde,
+		  time_varying_type = "rw0",
+		  spatial = "on",
+		  family =  tweedie(link = "log"),
+		  time = "YEAR",
+		  spatiotemporal = "ar1",
+		  fold_ids='fold_id',
+		  k_folds = 5
+			)
+
 
 s_m = simulate(m,nsim=500,type='mle-mvn')
 r_m = sdmTMB::dharma_residuals(s_m,m,return_DHARMa=T)
