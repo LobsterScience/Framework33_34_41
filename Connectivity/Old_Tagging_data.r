@@ -313,3 +313,47 @@ ggplot()+
             scale_fill_viridis_c()+
   geom_sf(data=oo,colour='red')
 
+
+
+
+
+#growth
+
+library(dplyr)
+
+# Assuming your data frame is called `df`
+# and has columns: TAGNUM, DATE, CL, RelCap
+b = subset(xasu,!is.na(CL), select=c(TAGNUM, DATE, CL, RelCap))
+b_wide <- b %>%
+  mutate(RelCap = tolower(RelCap)) %>%  # ensure consistent casing
+  group_by(TAGNUM) %>%
+  summarise(
+    ReleaseDate = DATE[RelCap == "rel"][1],
+    ReleaseCL   = CL[RelCap == "rel"][1],
+    RecaptureDate = DATE[RelCap == "cap"][1],
+    RecaptureCL   = CL[RelCap == "cap"][1],
+    .groups = "drop"
+  )
+
+bw = subset(b_wide,!is.na(RecaptureDate))
+bw$dal = bw$RecaptureDate-bw$ReleaseDate
+bw$SzInc = bw$RecaptureCL - bw$ReleaseCL
+bw = subset(bw,dal>0)
+
+library(dplyr)
+library(lubridate)
+library(purrr)
+
+# Assuming your data frame is called df and dates are in Date format
+bw <- bw %>%
+  mutate(
+    Includes_July_to_October = map2_lgl(ReleaseDate, RecaptureDate, ~ {
+      # Create a sequence of dates between release and recapture
+      date_seq <- seq(.x, .y, by = "day")
+      # Extract months and check if any are in July (7) to October (10)
+      any(month(date_seq) %in% 7:10)
+    })
+  )
+
+bw = subset(bw,dal<500 & SzInc>0)
+bw$perc = bw$SzInc / bw$ReleaseCL

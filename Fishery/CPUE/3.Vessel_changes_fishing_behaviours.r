@@ -8,7 +8,7 @@ require(ggpubr)
 load_all('~/git/bio.utilities')
 
 theme_set(theme_test(base_size = 14))
-
+fig_dir = file.path('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/')
 #cpue index
 co = readRDS(file.path(project.datadirectory('Framework_LFA33_34_41'),'CPUE','unBIASED_CPUE.rds'))
 cpu = co[[1]]
@@ -27,31 +27,26 @@ l = aggregate(Age_of_Vessel~LFA,data=d,FUN=median)
 oo = aggregate(Age_of_Vessel~YR_FISHED+LFA,data=d,FUN=function(x) quantile(x,probs=c(0.25,.5,.75)))
 ocp = merge(oo,cpu,by.x=c('LFA','YR_FISHED'),by.y=c('LFA','SYEAR'))
 
-ggplot(oo,aes(x=as.numeric(YR_FISHED),y=Age_of_Vessel[,2],ymin=Age_of_Vessel[,1],ymax=Age_of_Vessel[,3]))+geom_point()+geom_errorbar(width=0)+facet_wrap(~LFA)+xlab('Fishing Season')+ylab('Age of Vessel')+geom_hline(data=l,aes(yintercept=Age_of_Vessel),color='red')
+ggplot(oo,aes(x=as.numeric(YR_FISHED),y=Age_of_Vessel[,2],ymin=Age_of_Vessel[,1],ymax=Age_of_Vessel[,3]))+
+  geom_point()+geom_errorbar(width=0)+
+    facet_wrap(~LFA)+
+  xlab('Fishing Season')+
+  ylab('Age of Vessel')+
+  geom_hline(data=l,aes(yintercept=Age_of_Vessel),color='red')
+ggsave(file.path(fig_dir,'33_34_ageof_vessel.png'))
 
 ggplot(ocp,aes(x=unBCPUE,y=Age_of_Vessel[,2],label=YR_FISHED))+geom_point()+geom_path()+facet_wrap(~LFA)+
-  xlab('CPUE')+ylab('Age of Vessel')+geom_text(data=subset(ocp,YR_FISHED %in% c(2006,2023)),aes(label=YR_FISHED,x=unBCPUE,y=Age_of_Vessel[,2]))
+  xlab('CPUE')+ylab('Age of Vessel')+geom_text(data=subset(ocp,YR_FISHED %in% c(2006,2024)),aes(label=YR_FISHED,x=unBCPUE,y=Age_of_Vessel[,2]))
 
-# v = aggregate(Age_of_Vessel~YR_FISHED,data=subset(d,LFA==35),FUN=length)
-# ag = median(subset(d,LFA==35)$Age_of_Vessel,na.rm=T)
-# ggplot(subset(d,LFA==35),aes(YR_FISHED,Age_of_Vessel))+geom_boxplot()+ geom_text(data=v,aes(YR_FISHED,Inf,label=Age_of_Vessel),vjust=1,size=3) + theme_test()+ylab('Age of Vessel')+xlab('Year Fished')+geom_hline(yintercept=ag,col='red',linewidth=1.1)
-# 
-# 
-# v = aggregate(Age_of_Vessel~YR_FISHED,data=subset(d,LFA==36),FUN=length)
-# ag = median(subset(d,LFA==36)$Age_of_Vessel,na.rm=T)
-# ggplot(subset(d,LFA==36),aes(YR_FISHED,Age_of_Vessel))+geom_boxplot()+ geom_text(data=v,aes(YR_FISHED,Inf,label=Age_of_Vessel),vjust=1,size=3)+ theme_test()+ylab('Age of Vessel')+xlab('Year Fished')+geom_hline(yintercept=ag,col='red',linewidth=1.1)
-# 
-# 
-# v = aggregate(Age_of_Vessel~YR_FISHED,data=subset(d,LFA==38),FUN=length)
-# ag = median(subset(d,LFA==38)$Age_of_Vessel,na.rm=T)
-# ggplot(subset(d,LFA==38),aes(YR_FISHED,Age_of_Vessel))+geom_boxplot()+ geom_text(data=v,aes(YR_FISHED,Inf,label=Age_of_Vessel),vjust=1,size=3)+ theme_test()+ylab('Age of Vessel')+xlab('Year Fished')+geom_hline(yintercept=ag,col='red',linewidth=1.1)
 
 x=ggplot(d,aes(YEAR_BUILT,BHP))+geom_point()+theme_test()+facet_wrap(~LFA)+ xlab('Year Vessel Manufactured')+ylab('Brake Horse Power')
 y=ggplot(d,aes(YEAR_BUILT,LOA))+geom_point()+theme_test()+facet_wrap(~LFA)+ xlab('Year Vessel Manufactured')+ylab('Length Overall')+geom_hline(yintercept=50,colour='red')
-z=ggplot(subset(d,BREADTH>10),aes(YEAR_BUILT,BREADTH))+geom_point()+theme_test()+facet_wrap(~LFA)+ xlab('Year Vessel Manufactured')+ylab('Vessel Breadth')
+z=ggplot(subset(d,BREADTH>10 & BREADTH<35),aes(YEAR_BUILT,BREADTH))+geom_point()+theme_test()+facet_wrap(~LFA)+ xlab('Year Vessel Manufactured')+ylab('Vessel Breadth')
 
 ggpubr::ggarrange(x+rremove("xlab"),y+rremove("xlab"),z,ncol = 1)
+ggsave(file.path(fig_dir,'33_34_vessel_characteristics.png'))
 #Demographics on Lic
+
 o = lobster.db('licence_ages')
 o = subset(o, LFA %in% 33:34)
 o$id = paste(o$LICENCE_ID,o$FIN,o$LFA)
@@ -82,6 +77,7 @@ ol = aggregate(ageflag~lfa+fishingyrs,data=o,FUN=sum)
 ol1 = aggregate(ageflag~lfa+fishingyrs,data=o,FUN=length)
 
 ggplot(oo,aes(x=fishingyrs,y=Age[,2],ymin=Age[,1],ymax=Age[,3]))+geom_point()+geom_errorbar(width=0)+facet_wrap(~lfa)+xlab('Fishing Season')+ylab('Age')
+ggsave(file.path(fig_dir,'33_34_age_of_harvesters.png'))
 
 
 ####stacking partnerships
@@ -114,6 +110,7 @@ names(zp)[3]='tot'
 z = merge(z,zp)
 z$Licence_Type=z$lic/z$tot
 ggplot(z,aes(fill=type,y=lic,x=fishingyrs))+geom_bar(position = 'stack',stat='identity')+facet_wrap(~lfa)+xlab('Fishing Season')+ylab('Proportion of Licence Category')
+ggsave(file.path(fig_dir,'33_34_licence_type.png'))
 
 #Logbook Processing
 
@@ -170,11 +167,27 @@ ggplot(xg,aes(x=Pc[,2],y=Pp[,2],label=SYEAR))+geom_point()+geom_path()+facet_wra
 ####################################################################################################################################
 ####merge vessel info and licence info into logs
 
-av = merge(a,d,by.x=c('VR_NUMBER','SYEAR','LFA'),by.y=c('VR_NUMBER','YR_FISHED','LFA'))
-avo = merge(av,o[,c('lic','fishingyrs','lfa','Age')],by.x=c('LICENCE_ID','SYEAR','LFA'),by.y=c('lic','fishingyrs','lfa'))
+d$bCat = ifelse(d$BREADTH<20,"<20",ifelse(d$BREADTH>=20&d$BREADTH<25,"20-24",">25"))
 
-avo$bCat = ifelse(avo$BREADTH<20,"<20",ifelse(avo$BREADTH>=20&avo$BREADTH<25,"20-24",">25"))
-vo = aggregate(cbind(WEIGHT_KG,NUM_OF_TRAPS)~LFA+SYEAR+bCat,data=avo,FUN=sum)
+d_proportions <- d %>%
+  group_by(LFA, YR_FISHED, bCat) %>%
+  summarise(n = n(), .groups = "drop_last") %>%  # Count records per bCat
+  mutate(prop = n / sum(n)) %>%                 # Calculate proportion within group
+  ungroup()
+
+ggplot(subset(d_proportions,!is.na(bCat)), aes(x = (YR_FISHED), y = prop, fill = bCat)) +
+  geom_bar(stat = "identity") +
+  facet_wrap(~LFA) +
+  labs(x = "Year Fished", y = "Proportion Reporting", fill = "Breadth (ft)") +
+  scale_x_discrete(breaks=seq(min(d$YR_FISHED),max(d$YR_FISHED),by=5))+
+  theme_test()
+
+
+av = merge(a,d,by.x=c('VR_NUMBER','SYEAR','LFA'),by.y=c('VR_NUMBER','YR_FISHED','LFA'))
+#avo = merge(av,o[,c('lic','fishingyrs','lfa','Age')],by.x=c('LICENCE_ID','SYEAR','LFA'),by.y=c('lic','fishingyrs','lfa'))
+
+av$bCat = ifelse(av$BREADTH<20,"<20",ifelse(av$BREADTH>=20&av$BREADTH<25,"20-24",">25"))
+vo = aggregate(cbind(WEIGHT_KG,NUM_OF_TRAPS)~LFA+SYEAR+bCat,data=av,FUN=sum)
 vo$CPUE=vo$WEIGHT_KG/vo$NUM_OF_TRAPS
 
 vo$Fishing_Season =vo$SYEAR
@@ -195,15 +208,33 @@ jj = do.call(rbind,junk)
 
 
 ggplot(vo,aes(x=Fishing_Season,y=CPUE,group=Breadth_Category,colour=Breadth_Category))+scale_fill_discrete(labels=c('<20','20-24','>25'))+geom_line(size=1.3)+facet_wrap(~LFA)+
-  geom_line(data=jj,aes(x=Fishing_Season,y=pred,group=Breadth_Category,colour=Breadth_Category),linetype='dotted',size=1.3)+xlab('Fishing Season')+ylab('Annual CPUE')
+  geom_line(data=jj,aes(x=Fishing_Season,y=pred,group=Breadth_Category,colour=Breadth_Category),linetype='dotted',size=1.3)+xlab('Fishing Season')+ylab('CPUE')
+ggsave(file.path(fig_dir,'33_34_cpue_by_vessel_breadth.png'))
 
+#are the larger vessels fishing further from shore and are they seeing an advantage in catch from it
+    
+    gtot = readRDS(file.path(git.repo,'bio.lobster.data','mapping_data','centroids_of_grids_dist2shore_33_34_41.rds'))
+    gtot$geometry <- NULL
+    aav = subset(av,!is.na(GRID_NUM) & !is.na(bCat))
+    ag = merge(aav,gtot,by.x=c("LFA","GRID_NUM"),by.y = c('LFA','GRID_NO'))
+    
+    aga = aggregate(cbind(WEIGHT_KG,NUM_OF_TRAPS)~LFA+GRID_NUM+dist_to_shore+LICENCE_ID+bCat+SYEAR,data=ag,FUN=sum)
+    aga$wC = aga$WEIGHT_KG * aga$dist_to_shore
+    aga$wT = aga$NUM_OF_TRAPS * aga$dist_to_shore
+    
+    agaa =aggregate(cbind(WEIGHT_KG,NUM_OF_TRAPS,wC,wT)~LFA+LICENCE_ID+bCat+SYEAR,data=aga,FUN=sum)
+    agaa$CW_dist =  agaa$wC/agaa$WEIGHT_KG
+    agaa$EW_dist =  agaa$wT/agaa$NUM_OF_TRAPS
 
+agw = aggregate(cbind(CW_dist,EW_dist)~LFA+bCat+SYEAR,data=agaa,FUN = function(x) quantile(x,c(0.25,.5,.75)))
+agw$Breadth = agw$bCat
+ggplot(agw,aes(x=SYEAR,y=CW_dist[,2],group=Breadth,colour=Breadth))+scale_fill_discrete(labels=c('<20','20-24','>25'))+geom_line(size=1.3)+facet_wrap(~LFA)+xlab('Fishing Season')+ylab('Distance from Shore')
+ggsave(file.path(fig_dir,'33_34_catchweighted_distance_fromshore_vesselBread.png'))
 
 
 #how many grids per year are they fishing
 a = lobster.db('process.logs')
-a = subset(a, LFA %in% c(33, 34) & SYEAR <2024 & SYEAR>2005)
-
+a = subset(a, LFA %in% c(33, 34) & SYEAR <2025 & SYEAR>2005)
 
 xg = aggregate(cbind(WEIGHT_KG, NUM_OF_TRAPS)~SYEAR+LICENCE_ID+LFA+GRID_NUM,data=a,FUN=sum)
 xgg = aggregate(GRID_NUM~SYEAR+LICENCE_ID+LFA,data=subset(xg,GRID_NUM>0),FUN=length)
@@ -298,7 +329,7 @@ for(i in 1:length(xxx)){
 }
 x1a = do.call(rbind,junk)
 x1a$Fishing_Season =x1a$SYEAR
-ggplot(x1a,aes(x=WOS,y=prp,group=Fishing_Season,colour=Fishing_Season))+scale_colour_viridis_c(option='inferno')+geom_line()+facet_wrap(~LFA)+xlab('Week of Season')+ylab('Proportion of Total Income')+theme_test(base_size = 14)
+ggplot(subset(x1a,Fishing_Season %in% 2020:2021),aes(x=WOS,y=prp,group=Fishing_Season,colour=Fishing_Season))+scale_colour_viridis_c(option='inferno')+geom_line()+facet_wrap(~LFA)+xlab('Week of Season')+ylab('Proportion of Total Income')+theme_test(base_size = 14)
 
 
 

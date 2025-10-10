@@ -25,6 +25,7 @@ crp = c(xmin = -71, ymin = 40.75, xmax = -57, ymax = 47.5)
 
 #survey data
 g  =compileAbundPresAbs_vessel_corr(size=F)
+    addTemp2CompileAbun(g,temp.source='GLORYS')
 g = subset(g, SOURCE %in% c("ILTS","DFO_RV", "NEFSC_RV","Snow crab survey","Scallop Survey","MNR") & YEAR>1999)
 gs = st_as_sf(g,coords=c('LONGITUDE','LATITUDE'),crs=4326)
 gs <- suppressWarnings(suppressMessages(
