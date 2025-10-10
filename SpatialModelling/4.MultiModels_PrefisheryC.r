@@ -56,7 +56,7 @@ k4 <- Hmisc::wtd.quantile(survey$z, weights=survey$Legal, probs = seq(0, 1, len 
 survey$IDS = "I"
 survey = cv_SpaceTimeFolds(survey,idCol = 'IDS', nfolds=5)
 survey$n = survey$Legal
-
+path=file.path('../Model_outputs/CommercialN')
 
 ##model selection table
 ##set up a blank table
@@ -257,7 +257,8 @@ if ("m2" %in% models) {
                     data = survey_bs,
                     formula = Legal ~ 0+SOURCE+fYear, 
                     offset = 'of',
-                    time_varying = ~ 1 + bs1 + bs2 + bs3 + bs4 ,
+		mesh = bspde,
+		    time_varying = ~ 1 + bs1 + bs2 + bs3 + bs4 ,
                     time_varying_type = 'rw0',
                     spatial = "on",
                     family =  tweedie(link = "log"),
