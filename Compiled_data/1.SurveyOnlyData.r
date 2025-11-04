@@ -1,4 +1,4 @@
-#Create Mesh Survey Data only
+[#Create Mesh Survey Data only
 
 require(tidyr)
 require(sdmTMB)
@@ -24,8 +24,8 @@ sf_use_s2(FALSE) #needed for cropping
 crp = c(xmin = -71, ymin = 40.75, xmax = -57, ymax = 47.5)
 
 #survey data
-g  =compileAbundPresAbs_vessel_corr(size=F)
-    addTemp2CompileAbun(g,temp.source='GLORYS')
+g  =compileAbundPresAbs_vessel_corr(redo=F,size=F)
+#    addTemp2CompileAbun(g,temp.source='GLORYS')
 g = subset(g, SOURCE %in% c("ILTS","DFO_RV", "NEFSC_RV","Snow crab survey","Scallop Survey","MNR") & YEAR>1999)
 gs = st_as_sf(g,coords=c('LONGITUDE','LATITUDE'),crs=4326)
 gs <- suppressWarnings(suppressMessages(
@@ -75,8 +75,6 @@ st_geometry(ba) = NULL
 gs$z = ba$z[ss]
 gs$z_dist = as.numeric(ds)
 
-gs$
-
   #lobster year Sept 1 as start of new year
 decimal_year_sep1 <- function(date) {
     year <- year(date)
@@ -112,6 +110,7 @@ gs$DYEAR <- sapply(gs$DATE, decimal_year_sep1)
 gs$LYEAR <- sapply(gs$DATE, lobster_year_sep1)
 hist(gs$DYEAR)
   
-  
-saveRDS(list(gs,rL,ns_coast),'SurveyOnlyData.rds')
+  ggplot()+geom_sf(data=gs,aes(colour=SOURCE),size=.1)+geom_sf(data=ns_coast)
+gs = subset(gs,X<0)
+  saveRDS(list(gs,rL,ns_coast),'SurveyOnlyData.rds')
 

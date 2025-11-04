@@ -200,7 +200,7 @@ ca = m[[3]]
 
 
 #one year for testing
-ca = subset(ca,SYEAR%in% 2006:2024 & LFA %ni% 41)
+ca = subset(ca,SYEAR%in% 2014:2024 & LFA %ni% 41 & WEIGHT_KG>0)
 gtos = subset(gto, GRID_NO %in% unique(ca$GRID_NO))
 
 mes = sdmTMB::make_mesh(ca,xy_cols = c('X','Y'),n_knots=nrow(gtos)-1)
@@ -216,8 +216,6 @@ m4 = sdmTMB(WEIGHT_KG~ s(GlorBC_mean)+s(DOS),
             offset = 'leffort',
             data=ca,
             family = nbinom2(link='log') ,
-#            time_varying = ~ 1 + bs(DOS, degree=6, intercept=T),
-#            time_varying_type = "rw0",
             mesh = bspde,
             spatial='on',
             time='SYEAR',
@@ -253,8 +251,8 @@ final_subsets <- map2(base_subsets, remaining_split, bind_rows)
 years = unique(ca$SYEAR)
 for(i in 1:length(final_subsets)) {
 	        fs = final_subsets[[i]]
-        fs = subset(fs, SYEAR %in% years)
-	g = predict(m4,newdata=fs,se_fit=F)
+          fs = subset(fs, SYEAR %in% years)
+      	  g = predict(m4,newdata=fs,se_fit=F)
 	        fs$pred = m4$family$linkinv(g$est)
 		        final_subsets[[i]] = fs
 		        saveRDS(fs, file=paste0('cpue_predictions',i,'.rds'))
