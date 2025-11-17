@@ -16,8 +16,8 @@ mod.select.fn <- function (){
   c$Formula <-m$formula [1]
   c$"Time-varying" <- ifelse(is.null (m$time_varying), NA, paste(m$time_varying[1], m$time_varying[2])  )
   c$"Family" <- paste0(m$family[1]$family, "(link = ", m$family$link[1], ")")
-#  c$"cAIC" = cAIC(m,what='cAIC')
-  #ee = cAIC(m,what='EDF')
+  c$"cAIC" = cAIC(m,what='cAIC')
+ #ee = cAIC(m,what='EDF')
   #c$"EDF_ep" = ee[1]
   #c$"EDF_om" = ee[2]
   
@@ -30,10 +30,10 @@ mod.select.fn <- function (){
   
   ##model validation 
   c$"Sum loglik" <- m_cv$sum_loglik
-# m_cvTT = sdmTMBcv_tntpreds(m_cv)
-#  fitTT = dplyr::bind_rows(m_cvTT)
-#  fitTT$n = fitTT$diff
-#  fitTT$sqR = fitTT$n - fitTT$pred
+ m_cvTT = sdmTMBcv_tntpreds(m_cv)
+  fitTT = dplyr::bind_rows(m_cvTT)
+  fitTT$n = fitTT$diff
+  fitTT$sqR = fitTT$n - fitTT$pred
   c$MAE_test<-  with(fitTT[fitTT$tt=='test',],mae(as.numeric(n),as.numeric(pred)))
   c$MAE_train<-  with(fitTT[fitTT$tt=='train',],mae(as.numeric(n),as.numeric(pred)))
   c$RMSE_test <- with(fitTT[fitTT$tt=='test',],rmse(as.numeric(n),as.numeric(pred)))
