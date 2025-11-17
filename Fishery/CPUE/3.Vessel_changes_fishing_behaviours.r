@@ -6,13 +6,12 @@ require(bio.utilities)
 require(devtools)
 require(ggpubr)
 load_all('~/git/bio.utilities')
-
+la()
 theme_set(theme_test(base_size = 14))
 fig_dir = file.path('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/')
 #cpue index
 co = readRDS(file.path(project.datadirectory('Framework_LFA33_34_41'),'CPUE','unBIASED_CPUE.rds'))
 cpu = co[[1]]
-
 
 d = lobster.db('vessels.by.port')
 d = subset(d,LFA %in% 33:34 & YR_FISHED>2004 & YR_FISHED<2025)
@@ -39,11 +38,12 @@ ggplot(ocp,aes(x=unBCPUE,y=Age_of_Vessel[,2],label=YR_FISHED))+geom_point()+geom
   xlab('CPUE')+ylab('Age of Vessel')+geom_text(data=subset(ocp,YR_FISHED %in% c(2006,2024)),aes(label=YR_FISHED,x=unBCPUE,y=Age_of_Vessel[,2]))
 
 
+w=ggplot(d,aes(YEAR_BUILT,GROSS_TONNAGE))+geom_point()+theme_test()+facet_wrap(~LFA)+ xlab('Year Vessel Manufactured')+ylab('Gross Tonnage')
 x=ggplot(d,aes(YEAR_BUILT,BHP))+geom_point()+theme_test()+facet_wrap(~LFA)+ xlab('Year Vessel Manufactured')+ylab('Brake Horse Power')
 y=ggplot(d,aes(YEAR_BUILT,LOA))+geom_point()+theme_test()+facet_wrap(~LFA)+ xlab('Year Vessel Manufactured')+ylab('Length Overall')+geom_hline(yintercept=50,colour='red')
 z=ggplot(subset(d,BREADTH>10 & BREADTH<35),aes(YEAR_BUILT,BREADTH))+geom_point()+theme_test()+facet_wrap(~LFA)+ xlab('Year Vessel Manufactured')+ylab('Vessel Breadth')
 
-ggpubr::ggarrange(x+rremove("xlab"),y+rremove("xlab"),z,ncol = 1)
+ggpubr::ggarrange(w+rremove("xlab"),x+rremove("xlab"),y+rremove("xlab"),z,ncol = 1)
 ggsave(file.path(fig_dir,'33_34_vessel_characteristics.png'))
 #Demographics on Lic
 
@@ -104,8 +104,8 @@ o = do.call(rbind,ou)
 o = subset(o,fishingyrs>1998 &fishingyrs<2025) #missing info prior to 1995
 o$type = ifelse(o$type %in% c('STACKED','PARTNERSHIP A'),'Stacked-Partnership',o$type)
 o=subset(o,type %ni% c('EDUCATIONAL','TEMPORARY'))
-z = aggregate(lic~fishingyrs+lfa+type,data=o,FUN=length)
-zp = aggregate(lic~fishingyrs+lfa,data=o,FUN=length)
+z = aggregate(lic~fishingyrs+lfa+type,data=o,FUN=function(x) length(unique(x)))
+zp = aggregate(lic~fishingyrs+lfa,data=o,FUN=function(x) length(unique(x)))
 names(zp)[3]='tot'
 z = merge(z,zp)
 z$Licence_Type=z$lic/z$tot
@@ -123,7 +123,10 @@ b = lobster.db('community_code')
 f$days = f$END_DATE-f$START_DATE
 
 sd = aggregate(days~LFA+SYEAR,data=subset(f,LFA %in% 33:34),FUN=sum)
-z=ggplot(subset(sd,SYEAR>2004),aes(SYEAR,days))+geom_point()+facet_wrap(~LFA)+xlab('Fishing Season')+ylab('Length of Season (days)')
+md = aggregate(days~LFA,data=subset(sd,SYEAR>2004),FUN=median)
+names(md)[2]='medP'
+
+z=ggplot(subset(sd,SYEAR>2004),aes(SYEAR,days))+geom_point()+facet_wrap(~LFA)+xlab('Fishing Season')+ylab('Length of Season (days)')+geom_hline(data=md,aes(yintercept=medP),color='red')
 
 
 a$DYR = lubridate::decimal_date(a$DATE_FISHED) - lubridate::year(a$DATE_FISHED)
@@ -132,8 +135,9 @@ a$DWYR = lubridate::year(a$DATE_FISHED) + a$WYR/52
 a$P=1
 
 #how many trips
-x1 = aggregate(SD_LOG_ID~SYEAR+LICENCE_ID+LFA,data=subset(a,WEIGHT_KG>0 & NUM_OF_TRAPS>0),FUN=function(x) length(unique(x)))
-x1$P=x1$SD_LOG_ID
+a$ID = paste(a$LICENCE_ID,a$DATE_FISHED,sep="_")
+x1 = aggregate(ID~SYEAR+LICENCE_ID+LFA,data=subset(a,WEIGHT_KG>0 & NUM_OF_TRAPS>0),FUN=function(x) length(unique(x)))
+x1$P=x1$ID
 x1 = merge(x1,sd)
 x1$Pp = x1$P/as.numeric(x1$days)
 
@@ -147,12 +151,15 @@ names(md)[2]='medP'
 y=ggplot(xp,aes(x=SYEAR,y=Pp[,2],ymin=Pp[,1],ymax=Pp[,3]))+geom_point()+geom_errorbar(width=0)+facet_wrap(~LFA)+xlab('Fishing Season')+ylab('Number Trips / Season Length ')+geom_hline(data=md,aes(yintercept=medP),color='red')
 
 ggpubr::ggarrange(z+rremove('xlab'),y,ncol=1)
+ggsave(file.path(fig_dir,'33_34_proportion_of_season_fishing.png'))
 
 ###distribution of CPUE per trip see if that changes and is the reason for fewer trips
-xa = aggregate(cbind(WEIGHT_KG, NUM_OF_TRAPS)~SYEAR+LFA+SD_LOG_ID,data=subset(a,NUM_OF_TRAPS>0 & WEIGHT_KG>0),FUN=sum)
+
+xa = aggregate(cbind(WEIGHT_KG, NUM_OF_TRAPS)~SYEAR+LFA+ID,data=subset(a,NUM_OF_TRAPS>0 & WEIGHT_KG>0),FUN=sum)
 xa$Pc = xa$WEIGHT_KG/xa$NUM_OF_TRAPS
 xx = aggregate(Pc~SYEAR+LFA,data=xa,FUN=function(x) quantile(x,probs=c(0.25,.5,.75)))
 ggplot(xx,aes(x=SYEAR,y=Pc[,2],ymin=Pc[,1],ymax=Pc[,3]))+geom_point()+geom_errorbar(width=0)+facet_wrap(~LFA)+xlab('Fishing Season')+ylab('Median CPUE Per Trip')+theme_test()
+ggsave(file.path(fig_dir,'33_34_CPUEperTrips.png'))
 
 ##trips and cpues
 
@@ -160,13 +167,14 @@ xg = merge(xp,xx)
 
 ggplot(xg,aes(x=Pc[,2],y=Pp[,2],label=SYEAR))+geom_point()+geom_path()+facet_wrap(~LFA)+
   xlab('CPUE')+ylab('Number of Trips / Season Length')+geom_text(data=subset(xg,SYEAR %in% c(2006,2024)),aes(label=SYEAR,x=Pc[,2],y=Pp[,2]))+theme_test()
+ggsave(file.path(fig_dir,'33_34_CPUEperandSeasonLength.png'))
 
 
 
 
 ####################################################################################################################################
 ####merge vessel info and licence info into logs
-
+require(dplyr)
 d$bCat = ifelse(d$BREADTH<20,"<20",ifelse(d$BREADTH>=20&d$BREADTH<25,"20-24",">25"))
 
 d_proportions <- d %>%
@@ -181,6 +189,7 @@ ggplot(subset(d_proportions,!is.na(bCat)), aes(x = (YR_FISHED), y = prop, fill =
   labs(x = "Year Fished", y = "Proportion Reporting", fill = "Breadth (ft)") +
   scale_x_discrete(breaks=seq(min(d$YR_FISHED),max(d$YR_FISHED),by=5))+
   theme_test()
+ggsave(file.path(fig_dir,'33_34_Vesel_breadth.png'))
 
 
 av = merge(a,d,by.x=c('VR_NUMBER','SYEAR','LFA'),by.y=c('VR_NUMBER','YR_FISHED','LFA'))
@@ -238,34 +247,11 @@ a = subset(a, LFA %in% c(33, 34) & SYEAR <2025 & SYEAR>2005)
 
 xg = aggregate(cbind(WEIGHT_KG, NUM_OF_TRAPS)~SYEAR+LICENCE_ID+LFA+GRID_NUM,data=a,FUN=sum)
 xgg = aggregate(GRID_NUM~SYEAR+LICENCE_ID+LFA,data=subset(xg,GRID_NUM>0),FUN=length)
-xgga = aggregate(GRID_NUM~SYEAR+LFA,data=xgg,FUN=mean)
+xgga = aggregate(GRID_NUM~SYEAR+LFA,data=xgg,FUN=function(x) c(mean(x),quantile(x,c(0.025,.975))))
 
-ggplot(xgga,aes(SYEAR,GRID_NUM))+geom_line()+facet_wrap(~LFA)+theme_test()+ylab('Number of Reported Grids')+xlab('Fishing Season')
+ggplot(xgga,aes(SYEAR,y=GRID_NUM[,1],ymin=GRID_NUM[,2],ymax=GRID_NUM[,3]))+geom_point()+geom_errorbar(width=0)+geom_line()+facet_wrap(~LFA)+theme_test()+ylab('Number of Reported Grids')+xlab('Fishing Season')
+ggsave(file.path(fig_dir,'33_34_num_reporting_grids.png'))
 
-
-xvog = merge(xvo, xgg, by.x=c('SYEAR','LICENCE_ID','LFA', 'VR_NUMBER'),by.y=c('SYEAR','LICENCE_ID','LFA', 'VR_NUMBER'),all.x=T)
-xvog$ageBoat = xvog$SYEAR - xvog$YEAR_BUILT
-
-ggplot(subset(xvog, SYEAR==2019 & CPUE<8 & LFA != 28),aes(x=CPUE)) + geom_histogram(aes(y=..density..)) + facet_wrap(~LFA, scales='free_y')
-
-ggplot(subset(xvog, SYEAR==2019),aes(x=BHP)) + geom_histogram() + facet_wrap(~LFA, scales='free_y')
-
-ggplot(subset(xvog, SYEAR==2019),aes(x=WEIGHT_KG)) + geom_histogram() + facet_wrap(~LFA, scales='free_y')
-ggplot(subset(xvog, SYEAR==2019),aes(x=LOA)) + geom_histogram() + facet_wrap(~LFA, scales='free_y')
-
-ggplot(subset(xvog, SYEAR==2019),aes(x=ageBoat)) + geom_histogram() + facet_wrap(~LFA, scales='free_y')
-
-
-ggplot(subset(xvog, SYEAR==2019& GRID_NUM<10),aes(x=GRID_NUM)) + geom_histogram() + facet_wrap(~LFA, scales='free_y')
-
-##Statistics
-
-(aggregate(GRID_NUM~LFA, data=subset(xvog,SYEAR==2019),FUN=function(x) c(mean(x),sd(x),length(x))))
-(aggregate(Age~LFA, data=subset(xvog,SYEAR==2019),FUN=function(x) c(mean(x),sd(x),length(x))))
-(aggregate(log10(WEIGHT_KG)~LFA, data=subset(xvog,SYEAR==2019),FUN=function(x) c(mean(x),sd(x),length(x))))
-(aggregate(P~LFA, data=subset(xvog,SYEAR==2019),FUN=function(x) c(mean(x),sd(x),length(x))))
-(aggregate(ageBoat~LFA, data=subset(xvog,SYEAR==2019),FUN=function(x) c(mean(x),sd(x),length(x))))
-(aggregate(GROSS_TONNAGE~LFA, data=subset(xvog,SYEAR==2019),FUN=function(x) c(mean(x),sd(x),length(x))))
 
 ####value per trip
 a = lobster.db('process.logs')
@@ -287,6 +273,7 @@ oo = aggregate(valuePerTrip~LFA+SYEAR,data=asp,FUN=function(x) quantile(x,probs=
 oa = aggregate(valuePerTrap~LFA+SYEAR,data=asp,FUN=function(x) quantile(x,probs=c(0.25,.5,.75)))
 
 ggplot(oo,aes(x=SYEAR,y=valuePerTrip[,2],ymin=valuePerTrip[,1],ymax=valuePerTrip[,3]))+geom_point()+geom_errorbar(width=0)+facet_wrap(~LFA)+xlab('Fishing Season')+ylab('Value Per Trip')+theme_test(base_size = 14)
+ggsave(file.path(fig_dir,'33_34_value_per_trip.png'))
 
 
 ggplot(oa,aes(x=SYEAR,y=valuePerTrap[,2],ymin=valuePerTrap[,1],ymax=valuePerTrap[,3]))+geom_point()+geom_errorbar(width=0)+facet_wrap(~LFA)+xlab('Fishing Season')+ylab('Value Per Trap')+theme_test(base_size = 14)
@@ -313,6 +300,8 @@ for(i in 1:length(xxx)){
 x1a = do.call(rbind,junk)
 x1a$Fishing_Season =x1a$SYEAR
 ggplot(subset(x1a),aes(x=WOS,y=prp,group=Fishing_Season,colour=Fishing_Season))+scale_colour_viridis_c(option='inferno')+geom_line()+facet_wrap(~LFA)+xlab('Week of Season')+ylab('Proportion of Total Landings')+theme_test(base_size = 14)
+ggsave(file.path(fig_dir,'33_34_timing_of_landings.png'))
+
 ###2020 was a crazy early year not much in the end
 
 x1 = aggregate(valuePerTrip~SYEAR+LFA+WOS,data=subset(asp,WEIGHT_KG>0 & NUM_OF_TRAPS>0),FUN=sum)
@@ -329,16 +318,17 @@ for(i in 1:length(xxx)){
 }
 x1a = do.call(rbind,junk)
 x1a$Fishing_Season =x1a$SYEAR
-ggplot(subset(x1a,Fishing_Season %in% 2020:2021),aes(x=WOS,y=prp,group=Fishing_Season,colour=Fishing_Season))+scale_colour_viridis_c(option='inferno')+geom_line()+facet_wrap(~LFA)+xlab('Week of Season')+ylab('Proportion of Total Income')+theme_test(base_size = 14)
+ggplot(subset(x1a),aes(x=WOS,y=prp,group=Fishing_Season,colour=Fishing_Season))+scale_colour_viridis_c(option='inferno')+geom_line()+facet_wrap(~LFA)+xlab('Week of Season')+ylab('Proportion of Total Income')+theme_test(base_size = 14)
+ggsave(file.path(fig_dir,'33_34_propor_total_income.png'))
 
 
 
 ####timing of trips
 a = lobster.db('process.logs')
 a = subset(a, LFA %in% c( 33,34) & SYEAR <2025 & SYEAR>2005)
-
-x1 = aggregate(SD_LOG_ID~SYEAR+LICENCE_ID+LFA+WOS,data=subset(a,WEIGHT_KG>0 & NUM_OF_TRAPS>0),FUN=function(x) length(unique(x)))
-x1$P=x1$SD_LOG_ID
+a$ID = paste(a$LICENCE_ID,a$DATE_FISHED,sep="-")
+x1 = aggregate(ID~SYEAR+LICENCE_ID+LFA+WOS,data=subset(a,WEIGHT_KG>0 & NUM_OF_TRAPS>0),FUN=function(x) length(unique(x)))
+x1$P=x1$ID
 
 x1a = aggregate(P~SYEAR+LFA+WOS,data=x1,FUN=sum)
 
@@ -353,6 +343,7 @@ for(i in 1:length(xxx)){
 x1a = do.call(rbind,junk)
 x1a$Fishing_Season =x1a$SYEAR
 ggplot(x1a,aes(x=WOS,y=prp,group=Fishing_Season,colour=Fishing_Season))+scale_colour_viridis_c(option='inferno')+geom_line()+facet_wrap(~LFA)+xlab('Week of Season')+ylab('Proportion of Total Trips')+theme_test(base_size = 14)
+ggsave(file.path(fig_dir,'33_34_propor_total_trips.png'))
 
 
 x1aa = aggregate(P~LFA,data=x1a,FUN=max)
@@ -478,6 +469,18 @@ wtPri =aggregate(cbind(value,WT_LBS)~LFA+SYEAR,data=sp,FUN=sum)
 wtPri$mnV = wtPri$value/wtPri$WT_LBS
 
 ggplot(subset(wtPri,LFA %in% c(33,34) & SYEAR>2003 & SYEAR < 2025),aes(SYEAR,mnV))+geom_point()+geom_path()+facet_wrap(~LFA)+labs(x='Fishing Season',y='Weighted Price per lb')
+ggsave(file.path(fig_dir,'33_34_weighted_price_per_lb.png'))
+
+b = lobster.db('inflation')
+b = subset(b,year>2001)
+b$nInf = b$amount[1:nrow(b)]/b$amount[1]
+
+bw = merge(wtPri,b,by.x='SYEAR',by.y='year')
+bw$infPr = bw$mnV/bw$nInf #adjusted to 2002
+
+
+ggplot(subset(bw,LFA %in% c(33,34) & SYEAR>2003 & SYEAR < 2025),aes(SYEAR,infPr))+geom_point()+geom_path()+facet_wrap(~LFA)+labs(x='Fishing Season',y='Inflation Adjusted Weighted Price per lb')
+ggsave(file.path(fig_dir,'33_34_weighted_price_per_lb_inflationto2002value.png'))
 
 
 sp = aggregate(PRICE~woy+LFA+SYEAR,data=sp,FUN=median)
@@ -503,12 +506,11 @@ oa = merge(oo,oa)
 #  facet_wrap(~LFA)
 
 
-scaleright = max(a5$VALUE)/max(o5$valuePerTrip[,2])
+scaleright1 = max(a5$VALUE)/max(o5$valuePerTrip[,2])
 g1 = ggplot(data = o5,aes(x=SYEAR,y=valuePerTrip[,2]))+geom_point() +geom_path(lwd=1.2)+
-  geom_point(data=a5,aes(x=SYEAR,y=VALUE/scaleright),colour='grey66')+
-  geom_line(data=a5,aes(x=SYEAR,y=VALUE/scaleright),colour='black',lwd=1.2,linetype='dotted')+
-  
-  scale_y_continuous(name='Value Per Trip', sec.axis= sec_axis(~.*scaleright, name= 'Mean Fuel Price Per Trip',breaks = seq(0,max(a5$VALUE),length=6)))+
+  geom_point(data=a5,aes(x=SYEAR,y=VALUE/scaleright1),colour='grey66')+
+  geom_line(data=a5,aes(x=SYEAR,y=VALUE/scaleright1),colour='black',lwd=1.2,linetype='dotted')+
+  scale_y_continuous(name='Value Per Trip', sec.axis= sec_axis(~.*scaleright1, name= 'Mean Fuel Price Per Trip',breaks = seq(0,max(a5$VALUE),length=6)))+
   labs(x = "Year") 
 
 
@@ -523,7 +525,7 @@ g2 = ggplot(data = subset(o6,SYEAR>2004),aes(x=SYEAR,y=valuePerTrip[,2]))+geom_p
   labs(x = "Year") 
 
 ggpubr::ggarrange(g1,g2,labels=c('A','B'))
-
+ggsave(file.path(fig_dir,'33_34_valueperTrip_fuel.png'))
 
 ple = aggregate(cbind(NUM_OF_TRAPS,WEIGHT_KG,TotalV)~SYEAR+LFA+LICENCE_ID,data=asp,FUN=sum)
 plm = aggregate(VALUE~SYEAR+LFA+LICENCE_ID,data=asp,FUN=mean)

@@ -11,7 +11,7 @@ require(ggeffects)
 require(ggforce)
 fd = file.path(project.datadirectory('Framework_LFA33_34_41'),'CPUE')
 setwd(fd)
-
+la()
 gr = readRDS('C:/Users/Cooka/Documents/git/bio.lobster.data/mapping_data/GridPolyLand.rds')
 st_crs(gr) <- 4326
 gr = st_transform(gr,32620) 
@@ -61,10 +61,12 @@ cc$dyear = cc$yr+cc$t/365
 
 ggplot(subset(cc,lfa %in% c(33) ),aes(x=t,y=unBCPUE))+geom_point(size=.1)+geom_errorbar(aes(ymin=l95,ymax=u95),width=0,alpha=.1)+
   facet_wrap(~yr)+xlab('Day of Fishing Year')+ylab('unbiased CPUE')+ylim(c(0,8))+theme_test()
+ggsave(file.path(fig_dir,'33_daily_CPUE.png'))
 
 
 ggplot(subset(cc,lfa %in% c(34) ),aes(x=t,y=unBCPUE))+geom_point(size=.1)+geom_errorbar(aes(ymin=l95,ymax=u95),width=0,alpha=.1)+
   facet_wrap(~yr)+xlab('Day of Fishing Year')+ylab('unbiased CPUE')+ylim(c(0,8))+theme_test()
+ggsave(file.path(fig_dir,'34_daily_CPUE.png'))
 
 saveRDS(list(ca,cc),file='unBIASED_CPUE.rds')
 
@@ -85,6 +87,7 @@ ab$prop = 1-ab$SD_LOG_ID/ab$SD_LOG_UNF
 ab=subset(ab,LFA %in% c(33,34) & SYEAR>2005 & SYEAR<2025)
 agg = aggregate(prop~LFA,data=ab,FUN=mean)
 ggplot(ab,aes(x=SYEAR,y=prop))+geom_line()+facet_wrap(~LFA)+theme_test(base_size = 14)+xlab('Fishing Season')+ylab('Proportion Logs Containing Errors')+geom_hline(data=agg,aes(yintercept=prop),color='red')
+ggsave(file.path(fig_dir,'ProportionOfLogsContainingErrors.png'))
 
 
 
@@ -99,3 +102,4 @@ cc$ANO = cc$CPUE - cc$oCPUE
 cc$cols=  ifelse(cc$ANO>0,'red','blue')
 ggplot(subset(cc,lfa %in% c(33) ))+geom_segment(aes(x=t,xend=t,y=0,yend=ANO,colour=cols))+
   facet_wrap(~yr)+xlab('Day of Fishing Year')+ylab('Daily CPUE Anomaly')+theme_test()
+ggsave(file.path(fig_dir,'33_DailyCPUEAnomalies_Errors.png'))

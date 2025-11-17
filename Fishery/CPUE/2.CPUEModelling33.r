@@ -9,40 +9,30 @@ require(ggplot2)
 require(mgcv)
 require(ggeffects)
 require(ggforce)
+
+require(sdmTMB)
+require(purrr)
+la()
+
 fd = file.path(project.datadirectory('Framework_LFA33_34_41'),'CPUE')
 setwd(fd)
 
-gr = readRDS('C:/Users/Cooka/Documents/git/bio.lobster.data/mapping_data/GridPolyLand.rds')
-st_crs(gr) <- 4326
-gr = st_transform(gr,32620) 
-st_geometry(gr) <- st_geometry(st_as_sf(gr$geometry/1000)) 
-st_crs(gr) <- 32620
+m = readRDS(file='data_33_34_41_sdmtmb.rds')
+gto = m[[1]]
+ns_coast = m[[2]]
+ca = m[[3]]
+
+#aT = lobster.db('process.logs')
+ca = subset(ca,SYEAR>2005 & SYEAR<2025 & LFA %in% c(33,34))
+ca$mn = lubridate::month(ca$DATE_FISHED)
+ca$SYEAR = ifelse(ca$mn %in% c(11,12), ca$yr+1, ca$yr)
+ca$fYear = as.factor(ca$SYEAR)
+ca$leffort = log(ca$NUM_OF_TRAPS)
 
 
-###beginning models
-
-aT = lobster.db('process.logs')
-aT = subset(aT,SYEAR>2005 & SYEAR<2024 & LFA %in% c(33,34))
-
-aa = split(aT,f=list(aT$LFA,aT$SYEAR))
-oo = list()
-for(i in 1:length(aa)){
-  tmp<-aa[[i]]
-  if(nrow(tmp)==0) next
-  first.day<-min(tmp$DATE_FISHED)
-  tmp$time<-julian(tmp$DATE_FISHED,origin=first.day-1)
-  oo[[i]] = tmp
-}
-
-aT = do.call(rbind,oo)
-
-aT$fYear = as.factor(aT$SYEAR)
-aT$leffort = log(aT$NUM_OF_TRAPS)
-
-
-l33 = gam(WEIGHT_KG~fYear+offset(leffort),data=subset(aT,LFA==33),family = Gamma(link='log'),method='REML')
-l33a = gam(WEIGHT_KG~s(time)+fYear+offset(leffort),data=subset(aT,LFA==33),family = Gamma(link='log'),method='REML')
-l33b = gam(WEIGHT_KG~s(time)+s(time,by=fYear)+fYear+offset(leffort),data=subset(aT,LFA==33),family = Gamma(link='log'),method='REML')
+l33 = gam(WEIGHT_KG~fYear+offset(leffort),data=subset(ca,LFA==33),family = Gamma(link='log'),method='REML')
+l33a = gam(WEIGHT_KG~s(time)+fYear+offset(leffort),data=subset(ca,LFA==33),family = Gamma(link='log'),method='REML')
+l33b = gam(WEIGHT_KG~s(time)+s(time,by=fYear)+fYear+offset(leffort),data=subset(ca,LFA==33),family = Gamma(link='log'),method='REML')
 
 saveRDS(list(l33,l33a,l33b),'first3CPUEmodels33.rds')
 w = readRDS('first3CPUEmodels33.rds')
