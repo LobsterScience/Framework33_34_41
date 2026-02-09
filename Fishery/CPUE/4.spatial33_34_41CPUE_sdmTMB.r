@@ -13,14 +13,14 @@ setwd(file.path(project.datadirectory('Framework_LFA33_34_41')))
 
 
 
-m = readRDS(file='data_33_34_41_sdmtmb.rds')
+m = readRDS(file='CPUE/data_33_34_41_sdmtmb.rds')
 gto = m[[1]]
 ns_coast = m[[2]]
 ca = m[[3]]
 
 
 #one year for testing
-ca = subset(ca,SYEAR%in% 2014:2024 & LFA %ni% 41 & WEIGHT_KG>0)
+ca = subset(ca,SYEAR%in% 2014:2024 & LFA %ni% 41 & WEIGHT_KG>0 & !is.na(bcT) & NUM_OF_TRAPS>10)
 gtos = subset(gto, GRID_NO %in% unique(ca$GRID_NO))
 
 mes = sdmTMB::make_mesh(ca,xy_cols = c('X','Y'),n_knots=nrow(gtos)-1)
@@ -33,7 +33,6 @@ bspde <- sdmTMBextra::add_barrier_mesh(
 )
 
 
-require(sdmTMB)
 m4 = sdmTMB(WEIGHT_KG~ s(bcT)+s(DOS),
             offset = 'leffort',
             data=ca,
@@ -56,18 +55,20 @@ m5 = sdmTMB(WEIGHT_KG~ s(bcT)+s(DOS)+I(NUM_OF_TRAPS/(1+NUM_OF_TRAPS)),
             spatiotemporal='IID'
 )
 
+cAIC(m4)
+cAIC(m5)
 
-
-# b = visreg::visreg(m4,xvar='DOS',scale='response')
-# g = visreg::visreg(m4,xvar='GlorBC_mean',scale='response')
+# b = visreg::visreg(m5,xvar='bcT',scale='response')
+# t
 
  ##predictions
  gtos = subset(gto, LFA %ni% 41, select=c(LFA,GRID_NO,X,Y))
- temps = seq(quantile(ca$GlorBC_mean,0.025),quantile(ca$GlorBC_mean,0.975),length.out=10)
+ temps = seq(quantile(ca$bcT,0.025),quantile(ca$bcT,0.975),length.out=10)
  dos = seq(1,max(ca$DOS),length.out=15)
  yr = seq(min(ca$SYEAR),max(ca$SYEAR))
- 
- t1 = expand.grid(DOS=dos,GlorBC_mean=temps,SYEAR=yr)
+ NUM_OF_TRAPS=100
+ leffort=log(100)
+ t1 = expand.grid(DOS=dos,bcT=temps,SYEAR=yr,NUM_OF_TRAPS=NUM_OF_TRAPS,leffort=leffort)
  pre = merge(gtos,t1)
  require(purrr)
 base_subsets <- map(1:800, function(i) {
@@ -89,13 +90,25 @@ years = unique(ca$SYEAR)
 for(i in 1:length(final_subsets)) {
 	        fs = final_subsets[[i]]
           fs = subset(fs, SYEAR %in% years)
-      	  g = predict(m4,newdata=fs,se_fit=F)
-	        fs$pred = m4$family$linkinv(g$est)
+      	  g = predict(m5,newdata=fs,se_fit=F,offset=fs$leffort)
+	        fs$pred = m5$family$linkinv(g$est)
 		        final_subsets[[i]] = fs
 		        saveRDS(fs, file=paste0('cpue_predictions',i,'.rds'))
 			        rm(fs,g)
 }
 
- mod = predict(m4, newdata=pre, return_tmb_object=T)
- 
- 
+fin = bind_rows(final_subsets)
+
+saveRDS(fin,'compiled_cpue_predictions.rds')
+
+fin = readRDS('compiled_cpue_predictions.rds')
+
+fin$temp = round(fin$bcT*2)/2
+fi = aggregate(pred~temp,data=fin,FUN=function(x) quantile(x,c(0.25,0.5,0.75)))
+ggplot(fi,aes(x=temp,y=pred[,2]/100,ymin=pred[,1]/100,ymax=pred[,3]/100))+
+  geom_point(color='steelblue4')+
+  geom_line(color='steelblue4')+
+  geom_ribbon(fill='steelblue',alpha=.3)+
+  labs(x='Temperature',y='Marginal CPUE')
+
+

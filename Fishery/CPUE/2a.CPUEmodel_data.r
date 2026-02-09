@@ -8,7 +8,6 @@ la()
 
 setwd(file.path(project.datadirectory('Framework_LFA33_34_41')))
 
-
 ##temperature data
 
 te = readRDS(file=file.path(project.datadirectory('bio.lobster.glorys'),'Glorys2000_2025wBiasCorrColumn_doy_grid_agg.rds'))
@@ -156,7 +155,20 @@ gs$Y = st_coordinates(gs)[,2]
 gto = as_tibble(gs)
 ns_coast =readRDS(file.path( bio.directory, "bio.lobster.data","mapping_data","CoastSF.rds"))
 st_crs(ns_coast) <- 4326 # 'WGS84'; necessary on some installs
-ns_coast <- st_transform(ns_coast, crs_utm20)
+ylim=c(41.1,48); 		xlim=c(-67.8,-57.8)
+
+sf_use_s2(FALSE) #needed for cropping
+ns_coast = suppressWarnings(suppressMessages(st_crop(ns_coast,xmin=xlim[1],ymin=ylim[1],xmax=xlim[2],ymax=ylim[2])))
+
+#remove island
+nsc <- ns_coast %>%
+  mutate(area = st_area(geometry)) %>%
+  slice_max(order_by = area, n = 5, with_ties = FALSE) %>%
+  select(-area)
+nsc <- st_transform(nsc, crs_utm20)
+
+ns_coast = st_simplify(nsc,dTolerance = 10000)
+
 st_geometry(ns_coast) = st_geometry(ns_coast)/1000
 st_crs(ns_coast) <- crs_utm20
 

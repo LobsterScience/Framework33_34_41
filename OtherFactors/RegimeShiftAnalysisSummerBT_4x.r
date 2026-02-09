@@ -24,16 +24,16 @@ y$year = y$YEAR
 ##prediction grid from bathy
 ba = readRDS('~/git/bio.lobster.data/mapping_data/bathymetrySF.rds')
 ba = subset(ba,z>15)
-pa = readRDS('~/git/bio.lobster.data/mapping_data/Summer_RV_strata.rds')
-pa  = st_make_valid(subset(pa,PID>=470))
+pa = readRDS('C:/Users/cooka/Downloads/Strata_Mar_sf.rds')
+pa  = st_make_valid(subset(pa,StrataID>=470 & StrataID<=495))
 pau = st_union(pa)
 pau = st_transform(pau,crs=32620)
-ba_i = ba[st_within(ba,st_as_sf(pau), sparse=FALSE),]
+ba_i = ba[st_within(ba,(pau), sparse=FALSE),]
 
 
 
 d = groundfish.db('gsinf.odbc')
-d = subset(d,strat %in% unique(pa$PID) & month(sdate) %in% c(6,7,8) & !is.na(bottom_temperature))
+d = subset(d,strat %in% unique(pa$StrataID) & lubridate::month(sdate) %in% c(6,7,8) & !is.na(bottom_temperature))
 d$year = year(d$sdate)
 d = subset(d,select=c(year,slat,slong,bottom_temperature))
 d$X = convert.dd.dddd(d$slong)* -1
