@@ -14,7 +14,8 @@ co = readRDS(file.path(project.datadirectory('Framework_LFA33_34_41'),'CPUE','un
 cpu = co[[1]]
 
 d = lobster.db('vessels.by.port')
-d = subset(d,LFA %in% 33:34 & YR_FISHED>2004 & YR_FISHED<2025)
+#d = subset(d,LFA %in% 33:34 & YR_FISHED>2004 & YR_FISHED<2025)
+d = subset(d, YR_FISHED>2004 & YR_FISHED<2025)
 d = na.zero(d)
 d1 = aggregate(cbind(GROSS_TONNAGE, BHP, LOA, BREADTH, DEPTH,YEAR_BUILT)~VR_NUMBER+LFA+YR_FISHED,data=d,FUN=min)
 d = na.zero(d1,rev=T)

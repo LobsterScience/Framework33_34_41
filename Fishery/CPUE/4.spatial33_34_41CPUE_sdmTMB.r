@@ -103,9 +103,18 @@ saveRDS(fin,'compiled_cpue_predictions.rds')
 
 fin = readRDS('compiled_cpue_predictions.rds')
 
+#marginal temps
 fin$temp = round(fin$bcT*2)/2
 fi = aggregate(pred~temp,data=fin,FUN=function(x) quantile(x,c(0.25,0.5,0.75)))
 ggplot(fi,aes(x=temp,y=pred[,2]/100,ymin=pred[,1]/100,ymax=pred[,3]/100))+
+  geom_point(color='steelblue4')+
+  geom_line(color='steelblue4')+
+  geom_ribbon(fill='steelblue',alpha=.3)+
+  labs(x='Temperature',y='Marginal CPUE')
+
+#marginal dos
+fi = aggregate(pred~DOS,data=fin,FUN=function(x) quantile(x,c(0.25,0.5,0.75)))
+ggplot(fi,aes(x=DOS,y=pred[,2]/100,ymin=pred[,1]/100,ymax=pred[,3]/100))+
   geom_point(color='steelblue4')+
   geom_line(color='steelblue4')+
   geom_ribbon(fill='steelblue',alpha=.3)+

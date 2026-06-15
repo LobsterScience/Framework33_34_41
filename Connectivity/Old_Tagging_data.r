@@ -97,7 +97,7 @@ xasu=st_transform(xas,crs=32620)
 #ours and SWLSS tagging
 fb = "R:\\Science\\Population Ecology Division\\Shared\\!PED_Unit17_Lobster\\Lobster Unit Shared\\Projects and Programs\\Tagging\\Master_data"
 v = readxl::read_xlsx(file.path(fb,"SWLSS_releases20240229.xlsx" ))
-w = readxl::read_xlsx(file.path(fb,"XY_releases_2021.2022.2023.2024.2025_master.xlsx"  ))
+w = readxl::read_xlsx(file.path(fb,"XY_releases_2021_2026_master.xlsx"  ))
 wv = readxl::read_xlsx(file.path(fb,"LBT_RECAPTURES.xlsx"  ))
 
 w$LAT_DD = w$LAT_DEGREES+w$LAT_MINUTES/60
@@ -176,7 +176,8 @@ paired_data <- xasu %>%
 po$Id = po$LFA
 po$Stock = 'CAN'
 po = subset(po,select=c(Id,Stock))
-pd = st_join(paired_data,po)
+ po1 = st_transform(po,crs=32620) 
+pd = st_join(paired_data,po1)
 pd = subset(pd,!is.na(Id))
 pd = subset(pd,select=c(TAGNUM,Id,Stock))
 st_geometry(pd) <- NULL
@@ -186,14 +187,14 @@ names(pd) = c('TAGNUM','Mark_ID','Mark_Stock')
 pr = paired_data
 st_geometry(pr) = NULL
 st_geometry(pr) = pr$recapture
-prd = st_join(pr,po)
+prd = st_join(pr,po1)
 prd1 = subset(prd,is.na(Id),select=c(-Stock, -Id))
 prd2 = subset(prd,!is.na(Id))
 prd2 = subset(prd2,select=c(TAGNUM,Id,Stock))
 st_geometry(prd2) <- NULL
 names(prd2) = c('TAGNUM','Recap_ID','Recap_Stock')
-
-prd1 = st_join(prd1,us)
+us1 = st_transform(us,crs=32620)
+prd1 = st_join(prd1,us1)
 prd1 = subset(prd1,select=c(TAGNUM,Id,Stock))
 st_geometry(prd1) <- NULL
 names(prd1) = c('TAGNUM','Recap_ID','Recap_Stock')
@@ -285,8 +286,9 @@ findMoments(lo=3,up=400,dist = 'weibull')
             a = dweibull(mean(x),1.018,110.98) / 0.007 #scalar 
             if(mean(x)<3) a = 0.000001 #less than 3m no go 
             return(a)
-         }
-bathy_trans <- transition(ras, transition_function_depth, directions = 16, symm = TRUE) 
+ }
+ ras1 = raster::raster(ras)
+bathy_trans <- transition(ras1, transition_function_depth, directions = 16, symm = TRUE) 
 bt = geoCorrection(bathy_trans,type='r')
 #paths
 outpaths = list()
@@ -305,15 +307,123 @@ for(i in 1:nrow(paired_data)){
 }
 
 oo = bind_rows(outpaths)
-
+getwd()
+saveRDS(oo,'C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Tagging/pathsTagging.rds')
+oo = readRDS('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Tagging/pathsTagging.rds')
 # Plot Results
 
+pou = st_transform(po,crs=32620)
+uso = st_transform(us,crs=32620)
+st_crs(oo)=32620
+bb = st_bbox(oo)
 ggplot()+
-  geom_raster(data=ff,aes(x=x,y=y,fill=layer))+
+  geom_raster(data=ff,aes(x=x,y=y,fill=bathymetryRaster))+
             scale_fill_viridis_c()+
-  geom_sf(data=oo,colour='red')
+  geom_sf(data=oo,colour='red')+
+  geom_segment(
+    data = segments_df,
+    aes(x = x, y = y, xend = xend, yend = yend, color = t),
+    linewidth = 0.9,
+    lineend = "round"
+  ) +
+  scale_color_viridis_c(limits = c(0, 1), option='plasma') +
+  
+  geom_sf(data=pou,fill=NA ,colour='black')+
+  geom_sf(data=uso,fill=NA ,colour='black')+
+  
+  
+  
+  coord_sf(
+    xlim = c(bb["xmin"], bb["xmax"]),
+    ylim = c(bb["ymin"], bb["ymax"]),
+    expand = FALSE
+  )+
+  theme_test_adam()+
+theme(legend.position = 'none')
 
 
+library(sf)
+library(dplyr)
+library(ggplot2)
+library(units)
+
+# ---- 1) Make sure all lines are in a projected CRS (for sensible 'spacing')
+# (Skip this if you're already projected. Use an appropriate CRS for your area.)
+# lines_sf <- st_transform(lines_sf, 26920)  # Example: UTM20N for NS; pick yours.
+
+# ---- 2) Function: turn lines into many small colored segments
+make_gradient_segments <- function(lines_sf, spacing = set_units(250, "m")) {
+  stopifnot(inherits(lines_sf, "sf"))
+  # Ensure LINESTRING/MULTILINESTRING
+  geom_type <- unique(st_geometry_type(lines_sf))
+  if (!all(geom_type %in% c("LINESTRING", "MULTILINESTRING"))) {
+    stop("Input must be LINESTRING or MULTILINESTRING")
+  }
+  
+  # Unique id per feature
+  lines_sf <- lines_sf %>% mutate(.id = dplyr::row_number())
+  
+  # Densify: insert vertices roughly every 'spacing' along each line
+  # st_segmentize() takes a maximum segment length; convert spacing to numeric in CRS units
+  # If CRS is degrees, consider transforming first.
+  #spacing_num <- as.numeric(set_units(spacing, as_units(1)))
+  spacing_num <- units::drop_units(spacing)
+  dense <- st_segmentize(lines_sf, dfMaxLength = spacing_num)
+  
+  # Extract coordinates; 'L1' indexes sub-parts of MULTILINESTRING
+  coords <- st_coordinates(dense) %>% as.data.frame()
+  # coords has columns: X, Y, L1 (part id), L2 (ring id; NA for lines), etc.
+  
+  # Bring back feature id
+  coords <- coords %>%
+    mutate(.id = dense$.id[coords$L1 %||% 1])  # helper below handles NAs
+  
+  # Build segments between consecutive points within each feature+part
+  segments <- coords %>%
+    group_by(.id, L1) %>%
+    arrange(.id, L1, seq_len(n())) %>%
+    mutate(idx = row_number()) %>%
+    # Drop groups with fewer than 2 points
+    filter(n() >= 2) %>%
+    # Lead the next point to form segments
+    mutate(
+      x    = X,
+      y    = Y,
+      xend = dplyr::lead(X),
+      yend = dplyr::lead(Y)
+    ) %>%
+    # Remove the last row in each group (no xend/yend)
+    filter(!is.na(xend) & !is.na(yend)) %>%
+    # normalized position along line: 0..1
+    mutate(
+      t = (idx - 1) / (max(idx) - 1)
+    ) %>%
+    ungroup()
+  
+  segments
+}
+
+`%||%` <- function(a, b) if (is.null(a)) b else a
+
+# ---- 3) Use the helper on your sf LINESTRING object
+# Replace 'lines_sf' with your object
+segments_df <- make_gradient_segments(oo, spacing = set_units(200, "m"))
+
+# ---- 4) Plot: color by t (0=white, 1=red)
+ggplot() +
+  geom_segment(
+    data = segments_df,
+    aes(x = x, y = y, xend = xend, yend = yend, color = t),
+    linewidth = 0.9,
+    lineend = "round"
+  ) +
+  scale_color_gradient(limits = c(0, 1), low = "white", high = "red") +
+  guides(color = "none") +
+  coord_sf(expand = FALSE) +
+  theme_minimal()
+
+
+#############
 
 
 
