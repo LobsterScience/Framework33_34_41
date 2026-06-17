@@ -144,3 +144,10 @@ xx = na.zero(xx)
 
 
 saveRDS(xx,'AllSurveyData_all_lengths_may26.rds')
+
+
+#with glorys bias correction surface june2026
+ois = readRDS(file=file.path(bio.lobster::project.datadirectory('bio.lobster.glorys'),'lobsterData_withGlorys.rds'))
+ 
+
+
