@@ -23,18 +23,25 @@ sf_use_s2(FALSE) #needed for cropping
 
 crp = c(xmin = -71, ymin = 40.75, xmax = -57, ymax = 47.5)
 
+
 #survey data
-g  =compileAbundPresAbs_vessel_corr(redo=F,size=F)
-#    addTemp2CompileAbun(g,temp.source='GLORYS')
+#g  =compileAbundPresAbs_vessel_corr(redo=F,size=F)
+g = readRDS(file=file.path(bio.lobster::project.datadirectory('bio.lobster.glorys'),'lobsterData_withGlorys.rds'))
 g = subset(g, SOURCE %in% c("ILTS","DFO_RV", "NEFSC_RV","Snow crab survey","Scallop Survey","MNR") & YEAR>1999)
-gs = st_as_sf(g,coords=c('LONGITUDE','LATITUDE'),crs=4326)
+gs = st_as_sf(g)
+st_geometry(gs) = st_geometry(gs)*1000
+st_crs(gs) <- 32620
+gs = st_transform(gs, crs=4326)
 gs <- suppressWarnings(suppressMessages(
   st_crop(gs,
           crp)))
 gs$X = st_coordinates(gs)[,1]
 gs$Y = st_coordinates(gs)[,2]
-i = which(gs$X< -70 & gs$Y<41.5)
-j = which(gs$X< -69.4 & gs$Y <41)
+
+i = which(gs$X<70 & gs$Y < 41.5)
+j = which(gs$X<69.4 & gs$Y < 41)
+
+
 ij=unique(c(i,j))
 gs = gs[-ij,]
 gs <- st_transform(gs, crs_utm20)

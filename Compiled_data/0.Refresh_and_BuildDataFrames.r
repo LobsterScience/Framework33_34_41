@@ -43,11 +43,8 @@ ggplot()+geom_sf(data=co) +geom_sf(data=subset(gs,Gear %in% c('Commercial','Recr
 
 #assign GLORYS temperatures
 
-assignGlorys(x=g, temp=file.path(bio.lobster::project.datadirectory('bio.lobster.glorys'),'Glorys2000-2025wBiasCorrColumn_doy_june15.rds'))
+##assignGlorys(x=g, temp=file.path(bio.lobster::project.datadirectory('bio.lobster.glorys'),'Glorys2000-2025wBiasCorrColumn_doy_june15.rds'))
 
-
-lo = readRDS(file=file.path(project.datadirectory('bio.lobster.glorys'),'Glorys2000-2025wBiasCorrColumn_doy.rds')
-lo = st_as_sf(lo)
 
 #data for raph
 

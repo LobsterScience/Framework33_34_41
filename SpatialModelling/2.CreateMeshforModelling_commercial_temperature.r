@@ -58,16 +58,14 @@ ggplot() +
 
 i = which(survey$SOURCE=='Snow crab survey')
 survey$Legal[i] = survey$Lobster[i]
-survey$sz = (survey$z-mean(survey$z)) / sd(survey$z)
-k <- 4 # 5 basis splines
-k4 <- Hmisc::wtd.quantile(survey$sz, weights=survey$Legal, probs = seq(0, 1, len = k)[-c(1,k)]) ##quantiles of depth weighted by catch, to have splines at depth where catch located
-
+survey$st = (survey$Glor-mean(survey$Glor)) / sd(survey$Glor)
+survey$lz = log(survey$z)
 m <- sdmTMB(
   data = survey,
-  formula = Legal ~ 0+SOURCE+, 
+  formula = Legal ~ 0+SOURCE+s(lz), 
   offset = survey$of,
   mesh = bspde,
-  time_varying = ~ 1 + bs(sz, knots=k4, intercept=FALSE),
+  time_varying = ~ 1 + bs(st, knots=k4, intercept=FALSE),
   time_varying_type = "rw0",
   spatial = "on",
   family =  tweedie(link = "log"),
