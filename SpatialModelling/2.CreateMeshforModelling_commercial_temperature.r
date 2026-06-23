@@ -37,23 +37,23 @@ survey$of = log(as.numeric(survey$OFFSET))
 
 spde <- make_mesh(survey, xy_cols = c("X1000", "Y1000"),
                   cutoff = 12)
-plot(spde)
+#plot(spde)
 #n vertices
 spde$mesh$n
 
 # Add on the barrier mesh component:
 bspde <- add_barrier_mesh(
   spde, cC, range_fraction = .1,
-  proj_scaling = 1, plot = TRUE
+  proj_scaling = 1, plot = F
 )
 
 
-mesh_df_water <- bspde$mesh_sf[bspde$normal_triangles, ]
-mesh_df_land <- bspde$mesh_sf[bspde$barrier_triangles, ]
-ggplot() +
-  geom_sf() +
-  geom_sf(data = mesh_df_water, size = 1, colour = "blue") +
-  geom_sf(data = mesh_df_land, size = 1, colour = "green")
+#mesh_df_water <- bspde$mesh_sf[bspde$normal_triangles, ]
+#mesh_df_land <- bspde$mesh_sf[bspde$barrier_triangles, ]
+#ggplot() +
+#  geom_sf() +
+#  geom_sf(data = mesh_df_water, size = 1, colour = "blue") +
+#  geom_sf(data = mesh_df_land, size = 1, colour = "green")
 
 
 i = which(survey$SOURCE=='Snow crab survey')
@@ -87,7 +87,7 @@ qqline(survey$resids)
 
 mdg <- sdmTMB(
   data = survey,
-  formula = Legal ~ SOURCE+s(sz), 
+  formula = Legal ~ SOURCE+s(lz)+s(Glor), 
   offset = survey$of,
   mesh = bspde,
   #time_varying = ~ 1 + bs(sz, knots=k4, intercept=FALSE),
@@ -102,6 +102,11 @@ survey$resids <- residuals(mdg) # randomized quantile residuals
 qqnorm(survey$resids)
 qqline(survey$resids)
 
+saveRDS(mdg,'mdg.rds')
+png('glor_temp_smooth.png')
+plot_smooth(mdg,select=2)
+dev.off()
+
 
 mdg1 <- sdmTMB(
   data = survey,
@@ -115,7 +120,6 @@ mdg1 <- sdmTMB(
   time = "YEAR",
   spatiotemporal = "ar1"
 )#cAIC(mdg1) 98267.3
-
 
 ff = readRDS(file.path( project.datadirectory("bio.lobster"), "data","maps","bathy_LFAPolysSF.rds"))
 ff = subset(ff,z<max(survey$z) & z>5)
