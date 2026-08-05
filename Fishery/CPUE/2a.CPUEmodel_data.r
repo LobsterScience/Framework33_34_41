@@ -10,7 +10,7 @@ setwd(file.path(project.datadirectory('Framework_LFA33_34_41')))
 
 ##temperature data
 
-te = readRDS(file=file.path(project.datadirectory('bio.lobster.glorys'),'Glorys2000_2025wBiasCorrColumn_doy_grid_agg.rds'))
+te = readRDS(file=file.path(project.datadirectory('bio.lobster.glorys'),'Glorys2000_2025wBiasCorrColumn_doy_grid_agg_july29.rds'))
 
 #ggplot(subset(te,GRID_NO==303),aes(x=as.Date(Date),y=bcT[,3]))+geom_line()
 
@@ -18,17 +18,17 @@ te$Date = as.Date(te$Date)
 
 ################ grouping grids
 aT = lobster.db('process.logs')
-aT = subset(aT,SYEAR>2005 & SYEAR<2025 & LFA %in% c(33,34))
+aT = subset(aT,SYEAR>2005 & SYEAR<2026 & LFA %in% c(33,34))
 aT$GRID_NO = aT$GRID_NUM
 aT$DOY = lubridate::yday(aT$DATE_FISHED)
 a4 = lobster.db('process.logs41')
-a4 = subset(a4,!is.na(GRID_NO) & yr>2005 & yr<2025)
+a4 = subset(a4,!is.na(ID) & yr>2005 & yr<2026)
 a4$SYEAR = a4$yr
 a4$DATE_FISHED = a4$FV_FISHED_DATETIME
 a4$DOY = lubridate::yday(a4$FV_FISHED_DATETIME)
 a4$WEIGHT_KG = a4$ADJCATCH_KG
-u4 = unique(a4$GRID_NO)
-
+u4 = unique(a4$ID)
+a4$GRID_NO = a4$ID
 gr = readRDS(file.path(git.repo,'bio.lobster.data','mapping_data','GridPolys_DepthPruned_37Split.rds'))
 gr41 = st_as_sf(readRDS(file.path(git.repo,'bio.lobster.data','mapping_data','LFA41_grid_polys.rds')))
 coa = st_as_sf(readRDS(file.path(git.repo,'bio.lobster.data','mapping_data','CoastSF.rds')))
@@ -45,8 +45,9 @@ gr <- gr %>%
   ungroup() %>%
   select(-area)
 gr41$LFA = as.character(gr41$LFA)
-gr41 = subset(gr41,GRID_NO %in% u4 & GRID_NO %ni% c(860,1199))
-
+gr41 = subset(gr41,ID %in% u4 & ID %ni% c(860,1199))
+st_geometry(gr41) <- 'geometry'
+names(gr41)[c(1,3)] <- c('LFA','GRID_NO')
 gall = gtot = bind_rows(gr,gr41)
 gtot$centroid = st_centroid(gtot)
 cen_coords = st_coordinates(gtot$centroid)
@@ -66,7 +67,7 @@ gtot$geometry <- NULL
 logs = subset(aT,select=c(LFA, GRID_NO, SYEAR, DATE_FISHED,WEIGHT_KG,NUM_OF_TRAPS,DOY))
 l41 = subset(a4,select=c(LFA, GRID_NO, SYEAR, DATE_FISHED,WEIGHT_KG,NUM_OF_TRAPS,DOY))
 st_geometry(l41) = NULL
-
+l41$LFA = as.character(l41$LFA)
 combined = bind_rows(logs,l41)
 cwga = cwg = merge(combined,gtot)
 cwg$rDist = round(cwg$dist_to_shore/50) * 50
