@@ -47,7 +47,7 @@ gr <- gr %>%
 gr41$LFA = as.character(gr41$LFA)
 gr41 = subset(gr41,ID %in% u4 & ID %ni% c(860,1199))
 st_geometry(gr41) <- 'geometry'
-names(gr41)[c(1,3)] <- c('LFA','GRID_NO')
+names(gr41)[c(1,2)] <- c('LFA','GRID_NO')
 gall = gtot = bind_rows(gr,gr41)
 gtot$centroid = st_centroid(gtot)
 cen_coords = st_coordinates(gtot$centroid)
@@ -118,7 +118,7 @@ ggplot(w,aes(SYEAR, Dist2Shore))+geom_point()
 
 
 ###temperature modelling
-d = readRDS(file=file.path(project.datadirectory('bio.lobster.glorys'),'Glorys2000_2025wBiasCorrColumn_doy_grid_agg.rds'))
+d = readRDS(file=file.path(project.datadirectory('bio.lobster.glorys'),'Glorys2000_2025wBiasCorrColumn_doy_grid_agg_july29.rds'))
 d$Date = as.Date(d$Date)
 d$bcT = d$bcT[,3]
 d$z = d$z[,1]
