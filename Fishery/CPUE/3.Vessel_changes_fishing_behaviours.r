@@ -15,7 +15,7 @@ cpu = co[[1]]
 
 d = lobster.db('vessels.by.port')
 #d = subset(d,LFA %in% 33:34 & YR_FISHED>2004 & YR_FISHED<2025)
-d = subset(d, YR_FISHED>2004 & YR_FISHED<2025)
+d = subset(d, YR_FISHED>2004 & YR_FISHED<2026 & LFA %in% 33:34 )
 d = na.zero(d)
 d1 = aggregate(cbind(GROSS_TONNAGE, BHP, LOA, BREADTH, DEPTH,YEAR_BUILT)~VR_NUMBER+LFA+YR_FISHED,data=d,FUN=min)
 d = na.zero(d1,rev=T)
@@ -36,7 +36,7 @@ ggplot(oo,aes(x=as.numeric(YR_FISHED),y=Age_of_Vessel[,2],ymin=Age_of_Vessel[,1]
 ggsave(file.path(fig_dir,'33_34_ageof_vessel.png'))
 
 ggplot(ocp,aes(x=unBCPUE,y=Age_of_Vessel[,2],label=YR_FISHED))+geom_point()+geom_path()+facet_wrap(~LFA)+
-  xlab('CPUE')+ylab('Age of Vessel')+geom_text(data=subset(ocp,YR_FISHED %in% c(2006,2024)),aes(label=YR_FISHED,x=unBCPUE,y=Age_of_Vessel[,2]))
+  xlab('CPUE')+ylab('Age of Vessel')+geom_text(data=subset(ocp,YR_FISHED %in% c(2006,2025)),aes(label=YR_FISHED,x=unBCPUE,y=Age_of_Vessel[,2]))
 
 
 w=ggplot(d,aes(YEAR_BUILT,GROSS_TONNAGE))+geom_point()+theme_test()+facet_wrap(~LFA)+ xlab('Year Vessel Manufactured')+ylab('Gross Tonnage')

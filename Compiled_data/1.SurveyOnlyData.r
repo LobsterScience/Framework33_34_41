@@ -121,3 +121,14 @@ hist(gs$DYEAR)
 gs = subset(gs,X<0)
   saveRDS(list(gs,rL,ns_coast),'SurveyOnlyData.rds')
 
+  
+  #add temperture
+  
+  a = readRDS('SurveyOnlyData.rds')
+  aT = a[[1]]
+  bB = a[[2]]
+  cC = a[[3]]
+  
+ v= assignGlorys(x=aT,temp= ,x_crs=32620,x_spatial = c('X','Y'),temp_crs=32620,temp_spatial = c('X','Y'))
+  
+  

@@ -34,13 +34,13 @@ cC = a[[3]]
 aT <- suppressWarnings(suppressMessages(
   st_crop(aT,
           c(xmin = 100, ymin = 4598, xmax = 430, ymax = 5100))))
-ggplot(aT)+geom_sf()+geom_sf(data=aTa,colour='red')
+ggplot(aT)+geom_sf()+geom_sf(data=aT,colour='red')
 aT = subset(aT,SOURCE %ni% 'MNR')
 aT = subset(aT, lubridate::month(DATE) %in% c(5,6,7,8))
 aT$X1000 <- st_coordinates(aT)[,1]
 aT$Y1000 <- st_coordinates(aT)[,2]
 
-survey = as_tibble(subset(aT,z>0 & !is.na(Legal)))
+survey = as_tibble(subset(aT,z>0 & !is.na(Legal_wt)))
 survey$of = log(as.numeric(survey$OFFSET))
 
 spde <- make_mesh(survey, xy_cols = c("X1000", "Y1000"),
@@ -58,7 +58,7 @@ bspde <- add_barrier_mesh(
 
 
 i = which(survey$SOURCE=='Snow crab survey')
-survey$Legal[i] = survey$Lobster[i]
+survey$Legal_wt[i] = survey$Lobster[i]
 survey$st = (survey$Glor-mean(survey$Glor)) / sd(survey$Glor)
 survey$lz = log(survey$z)
 
@@ -66,7 +66,7 @@ survey$lz = log(survey$z)
 survey$IDS = "I"
 or1 = as_tibble(survey)
 or1 = cv_SpaceTimeFolds(or1,idCol = 'IDS', nfolds=5)
-path=file.path('Model_outputs/models_June23_26')
+path=file.path('Model_outputs/models_Aug21_26_wt')
 dir.create(path,recursive = T)
 source(('C:/Users/cooka/Documents/git/Framework_LFA33_34_41/SpatialModelling/setupMultimodelTable.r'))
 #source(file.path('~/git/Framework_LFA33_34_41/SpatialModelling/setupMultimodelTable.r'))
@@ -77,7 +77,7 @@ if('m1' %in% models){
   mod.label <- "m1" 
   m <- sdmTMB(
     data = or1,
-    formula = Legal ~ SOURCE+s(lz), 
+    formula = Legal_wt ~ SOURCE+s(lz), 
     offset = survey$of,
     mesh = bspde,
     spatial = "on",
@@ -88,7 +88,7 @@ if('m1' %in% models){
   
   m_cv <- sdmTMB_cv(
     data = or1,
-    formula = Legal ~ SOURCE+s(lz), 
+    formula = Legal_wt ~ SOURCE+s(lz), 
     offset = survey$of,
     mesh = bspde,
     spatial = "on",
@@ -101,7 +101,7 @@ if('m1' %in% models){
   m1 = m
   ca <-mod.select.fn()
   mod.select <- rbind(mod.select, ca)
-  saveRDS(m,file=file.path(path,paste0('commercialN_',mod.label,'.rds')))
+  saveRDS(m,file=file.path(path,paste0('commercialWt_',mod.label,'.rds')))
   saveRDS(mod.select,file=file.path(path,'model_selection.rds'))
 }
 
@@ -112,7 +112,7 @@ if('m2' %in% models){
   
 m2 <- sdmTMB(
   data = or1,
-  formula = Legal ~ SOURCE+s(lz)+s(Glor), 
+  formula = Legal_wt ~ SOURCE+s(lz)+s(Glor), 
   offset = survey$of,
   mesh = bspde,
   spatial = "on",
@@ -123,7 +123,7 @@ m2 <- sdmTMB(
 
 m_cv <- sdmTMB(
   data = or1,
-  formula = Legal ~ SOURCE+s(lz)+s(Glor), 
+  formula = Legal_wt ~ SOURCE+s(lz)+s(Glor), 
   offset = survey$of,
   mesh = bspde,
   spatial = "on",
@@ -136,14 +136,14 @@ m_cv <- sdmTMB(
 m2 = m
 ca <-mod.select.fn()
 mod.select <- rbind(mod.select, ca)
-saveRDS(m,file=file.path(path,paste0('commercialN_',mod.label,'.rds')))
+saveRDS(m,file=file.path(path,paste0('commercialWt_',mod.label,'.rds')))
 saveRDS(mod.select,file=file.path(path,'model_selection.rds'))
 }
 if('m3' %in% models){
   mod.label <- "m3" 
   m3 <- sdmTMB(
     data = or1,
-    formula = Legal ~ SOURCE+s(lz), 
+    formula = Legal_wt ~ SOURCE+s(lz), 
     offset = survey$of,
     mesh = bspde,
     spatial = "on",
@@ -155,7 +155,7 @@ if('m3' %in% models){
   
   m_cv <- sdmTMB_cv(
     data = or1,
-    formula = Legal ~ SOURCE+s(lz), 
+    formula = Legal_wt ~ SOURCE+s(lz), 
     offset = survey$of,
     mesh = bspde,
     spatial = "on",
@@ -169,6 +169,6 @@ if('m3' %in% models){
   m3 = m
   ca <-mod.select.fn()
   mod.select <- rbind(mod.select, ca)
-  saveRDS(m,file=file.path(path,paste0('commercialN_',mod.label,'.rds')))
+  saveRDS(m,file=file.path(path,paste0('commercialWt_',mod.label,'.rds')))
   saveRDS(mod.select,file=file.path(path,'model_selection.rds'))
 }

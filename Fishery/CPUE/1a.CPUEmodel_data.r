@@ -17,7 +17,7 @@ te = readRDS(file=file.path(project.datadirectory('bio.lobster.glorys'),'Glorys2
 te$Date = as.Date(te$Date)
 
 ################ grouping grids
-aT = lobster.db('process.logs')
+aaT = lobster.db('process.logs')
 aT = subset(aT,SYEAR>2005 & SYEAR<2026 & LFA %in% c(33,34))
 aT$GRID_NO = aT$GRID_NUM
 aT$DOY = lubridate::yday(aT$DATE_FISHED)
@@ -64,8 +64,9 @@ gtot = subset(gtot,X< -60.5)
 goo = gtot
 gtot$geometry <- NULL
 
-logs = subset(aT,select=c(LFA, GRID_NO, SYEAR, DATE_FISHED,WEIGHT_KG,NUM_OF_TRAPS,DOY))
-l41 = subset(a4,select=c(LFA, GRID_NO, SYEAR, DATE_FISHED,WEIGHT_KG,NUM_OF_TRAPS,DOY))
+logs = subset(aT,select=c(LFA, GRID_NO, SYEAR, DATE_FISHED,WEIGHT_KG,NUM_OF_TRAPS,DOY,LICENCE_ID,SD_LOG_ID))
+a4$SD_LOG_ID = a4$LOG_EFRT_STD_INFO_ID 
+l41 = subset(a4,select=c(LFA, GRID_NO, SYEAR, DATE_FISHED,WEIGHT_KG,NUM_OF_TRAPS,DOY,LICENCE_ID,SD_LOG_ID))
 st_geometry(l41) = NULL
 l41$LFA = as.character(l41$LFA)
 combined = bind_rows(logs,l41)

@@ -14,15 +14,15 @@ require(INLA)
 options(stringAsFactors=F)
 require(PBSmapping)
 require(sf)
+require(splines)
 la()
 fd=file.path(project.datadirectory('Framework_LFA33_34_41'),'outputs','SURVEYS')
 setwd(fd)
 crs_utm20 <- 32620
 sf_use_s2(FALSE) #needed for cropping
-
+aT = readRDS(file.path(bio.lobster::project.datadirectory('bio.lobster.glorys'),'lobsterData_withGlorys_aug13.rds'))
 
 a = readRDS('SurveyOnlyData.rds')
-aT = a[[1]]
 bB = a[[2]]
 cC = a[[3]]
 
@@ -42,7 +42,7 @@ spde <- make_mesh(survey, xy_cols = c("X1000", "Y1000"),
 spde$mesh$n
 
 # Add on the barrier mesh component:
-bspde <- add_barrier_mesh(
+bspde <- sdmTMBextra::add_barrier_mesh(
   spde, cC, range_fraction = .1,
   proj_scaling = 1, plot = F
 )
@@ -62,10 +62,10 @@ survey$st = (survey$Glor-mean(survey$Glor)) / sd(survey$Glor)
 survey$lz = log(survey$z)
 m <- sdmTMB(
   data = survey,
-  formula = Legal ~ 0+SOURCE+s(lz), 
+  formula = Legal ~ 0+SOURCE+s(lz)+s(st), 
   offset = survey$of,
   mesh = bspde,
-  time_varying = ~ 1 + bs(st, knots=k4, intercept=FALSE),
+  #time_varying = ~ 1 + bs(st, knots=k4, intercept=FALSE),
   time_varying_type = "rw0",
   spatial = "on",
   family =  tweedie(link = "log"),
