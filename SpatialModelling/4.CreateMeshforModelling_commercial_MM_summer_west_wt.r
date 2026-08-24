@@ -12,7 +12,7 @@ require(dplyr)
 require(ggplot2)
 require(INLA)
 options(stringAsFactors=F)
-require(PBSmapping)
+#require(PBSmapping)
 require(sf)
 la()
 fd=file.path(project.datadirectory('Framework_LFA33_34_41'),'outputs','SURVEYS')
@@ -34,7 +34,7 @@ cC = a[[3]]
 aT <- suppressWarnings(suppressMessages(
   st_crop(aT,
           c(xmin = 100, ymin = 4598, xmax = 430, ymax = 5100))))
-ggplot(aT)+geom_sf()+geom_sf(data=aT,colour='red')
+#ggplot(aT)+geom_sf()+geom_sf(data=aT,colour='red')
 aT = subset(aT,SOURCE %ni% 'MNR')
 aT = subset(aT, lubridate::month(DATE) %in% c(5,6,7,8))
 aT$X1000 <- st_coordinates(aT)[,1]
@@ -67,11 +67,11 @@ survey$IDS = "I"
 or1 = as_tibble(survey)
 or1 = cv_SpaceTimeFolds(or1,idCol = 'IDS', nfolds=5)
 path=file.path('Model_outputs/models_Aug21_26_wt')
-dir.create(path,recursive = T)
-source(('C:/Users/cooka/Documents/git/Framework_LFA33_34_41/SpatialModelling/setupMultimodelTable.r'))
-#source(file.path('~/git/Framework_LFA33_34_41/SpatialModelling/setupMultimodelTable.r'))
+#dir.create(path,recursive = T)
+#source(('C:/Users/cooka/Documents/git/Framework_LFA33_34_41/SpatialModelling/setupMultimodelTable.r'))
+source(file.path('/home/cooka@ENT/git/Framework33_34_41/SpatialModelling/setupMultimodelTable.r'))
 
-models = c('m1','m3','m5','m6')
+models = c('m1','m2','m3')
 ################################################################################################################################
 if('m1' %in% models){
   mod.label <- "m1" 
@@ -99,7 +99,45 @@ if('m1' %in% models){
     k_folds = 5
   )
   m1 = m
-  ca <-mod.select.fn()
+
+cv <- bind_rows(m_cv)
+cv$pred_delta <- cv$pred_pa * cv$pred_pos
+
+
+:  ca <-mod.select.fn()
+
+library(pROC)
+
+metrics <- list(
+
+  AUC = auc(
+    cv$observed > 0,
+    cv$pred_pa
+  ),
+
+  Brier = mean(
+    ((cv$observed > 0) - cv$pred_pa)^2
+  ),
+
+  RMSE = sqrt(mean(
+    (cv$observed - cv$pred_delta)^2
+  )),
+
+  MAE = mean(
+    abs(cv$observed - cv$pred_delta)
+  ),
+
+  Bias = mean(
+    cv$pred_delta - cv$observed
+  ),
+
+  PercentBias = 100 *
+    sum(cv$pred_delta - cv$observed) /
+    sum(cv$observed)
+)
+
+
+
   mod.select <- rbind(mod.select, ca)
   saveRDS(m,file=file.path(path,paste0('commercialWt_',mod.label,'.rds')))
   saveRDS(mod.select,file=file.path(path,'model_selection.rds'))
@@ -113,7 +151,7 @@ if('m2' %in% models){
 m2 <- sdmTMB(
   data = or1,
   formula = Legal_wt ~ SOURCE+s(lz)+s(Glor), 
-  offset = survey$of,
+  offset = 'of',
   mesh = bspde,
   spatial = "on",
   family =  delta_gamma(link1='logit',link2 = 'log'),
@@ -124,7 +162,7 @@ m2 <- sdmTMB(
 m_cv <- sdmTMB(
   data = or1,
   formula = Legal_wt ~ SOURCE+s(lz)+s(Glor), 
-  offset = survey$of,
+  offset = 'of',
   mesh = bspde,
   spatial = "on",
   family =  delta_gamma(link1='logit',link2 = 'log'),
@@ -144,7 +182,7 @@ if('m3' %in% models){
   m3 <- sdmTMB(
     data = or1,
     formula = Legal_wt ~ SOURCE+s(lz), 
-    offset = survey$of,
+    offset = 'of',
     mesh = bspde,
     spatial = "on",
     spatial_varying = ~(Glor),
@@ -156,7 +194,7 @@ if('m3' %in% models){
   m_cv <- sdmTMB_cv(
     data = or1,
     formula = Legal_wt ~ SOURCE+s(lz), 
-    offset = survey$of,
+    offset = 'of',
     mesh = bspde,
     spatial = "on",
     spatial_varying = ~(Glor),
