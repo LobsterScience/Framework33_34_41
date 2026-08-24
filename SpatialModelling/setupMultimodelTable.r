@@ -27,7 +27,7 @@ mod.select.fn <- function (){
   c$`Matern range` <- m$sd_report[[1]]["range"]
   c$`Spatial SD` <- m$sd_report[[1]]["sigma_O"]
   c$"Hessian_positive" <- m$pos_def_hessian
-  
+  browser()
   ##model validation 
   c$"Sum loglik" <- m_cv$sum_loglik
  m_cvTT = sdmTMBcv_tntpreds(m_cv)
