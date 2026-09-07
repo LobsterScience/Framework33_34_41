@@ -147,28 +147,33 @@ bmap+
  geom_sf(data=subset(pdd,Relcap=='Cap'),colour='red',size=0.8)+
   cf
 
-
-
+xasu$Tags = paste(xasu$Source,xasu$TAGNUM,xasu$TAGTYPE,sep="-")
+xx = subset(xasu, select=c(Tags, DATE, SEX, EGG,CL, RelCap))
+pdd$Tags = paste(pdd$TAG_PREFIX,pdd$TAG_NUM,sep="-")
+pdd$EGG = ifelse(pdd$SEX==3,1,NA)
+pdd$CL = pdd$CARAPACE_LENGTH
+px = subset(pdd, select=c(Tags, DATE, SEX, EGG,CL, Relcap))
+pcc = bind_rows(px,xx)
 ##summary data
 
 library(geosphere)
 require(gdistance)
 
 # Pair release and recapture events
-paired_data <- xasu %>%
-  group_by(TAGNUM) %>%
+paired_data <- pcc %>%
+  group_by(Tags) %>%
   filter(n() == 2) %>%  # Ensure each animal has both events
   arrange(DATE) %>%     # Sort by date
   summarise(
     release = first(geometry),
-    recapture = last(geometry),
-  #  release_date = first(DATE),
-  #  recapture_date = last(DATE),
+  recapture = last(geometry),
+#    release_date = first(DATE),
+#    recapture_date = last(DATE),
     distance_km = st_distance(first(geometry), last(geometry), by_element = TRUE) / 1000,  # Convert to km
-  #  release_distance_to_shore = min(st_distance(first(geometry),cou)),
-  # recapture_distance_to_shore = min(st_distance(last(geometry),cou)),
-  #  duration_days = as.numeric(last(DATE) - first(DATE)),  # Time difference in days
-#    direction = bearing(st_coordinates(first(geometry)), st_coordinates(last(geometry)))  # Calculate bearing
+#    release_distance_to_shore = min(st_distance(first(geometry),cou)),
+ #  recapture_distance_to_shore = min(st_distance(last(geometry),cou)),
+   duration_days = as.numeric(last(DATE) - first(DATE)),  # Time difference in days
+   # direction = bearing(st_coordinates(first(geometry)), st_coordinates(last(geometry)))  # Calculate bearing
   )
 
 
@@ -179,7 +184,7 @@ po = subset(po,select=c(Id,Stock))
  po1 = st_transform(po,crs=32620) 
 pd = st_join(paired_data,po1)
 pd = subset(pd,!is.na(Id))
-pd = subset(pd,select=c(TAGNUM,Id,Stock))
+pd = subset(pd,select=c(Tags,Id,Stock))
 st_geometry(pd) <- NULL
 names(pd) = c('TAGNUM','Mark_ID','Mark_Stock')
 
@@ -190,12 +195,12 @@ st_geometry(pr) = pr$recapture
 prd = st_join(pr,po1)
 prd1 = subset(prd,is.na(Id),select=c(-Stock, -Id))
 prd2 = subset(prd,!is.na(Id))
-prd2 = subset(prd2,select=c(TAGNUM,Id,Stock))
+prd2 = subset(prd2,select=c(Tags,Id,Stock))
 st_geometry(prd2) <- NULL
 names(prd2) = c('TAGNUM','Recap_ID','Recap_Stock')
 us1 = st_transform(us,crs=32620)
 prd1 = st_join(prd1,us1)
-prd1 = subset(prd1,select=c(TAGNUM,Id,Stock))
+prd1 = subset(prd1,select=c(Tags,Id,Stock))
 st_geometry(prd1) <- NULL
 names(prd1) = c('TAGNUM','Recap_ID','Recap_Stock')
 prd1$Recap_ID = as.character(prd1$Recap_ID)
@@ -203,11 +208,12 @@ prd1$Recap_ID = as.character(prd1$Recap_ID)
 prd = bind_rows(prd1,prd2)
 
 pd = merge(pd,prd)
+names(pd)[1] = 'Tags'
 
 paired_data1=left_join(paired_data,as.data.frame(pd))
 
 
-sPd = aggregate(TAGNUM~Mark_ID+Mark_Stock+Recap_ID+Recap_Stock,data=paired_data1,FUN=function(x) length(unique(x)))
+sPd = aggregate(Tags~Mark_ID+Mark_Stock+Recap_ID+Recap_Stock,data=paired_data1,FUN=function(x) length(unique(x)))
 names(sPd)[5] = 'N_Recaptures'
 
 ####Figures 
@@ -216,28 +222,29 @@ names(sPd)[5] = 'N_Recaptures'
 ##########
 #locations of releases
 bmap+
-  geom_sf(data=subset(xasu,RelCap=='Rel'),colour='pink',size=0.8)+
-  geom_sf(data=subset(xasu,RelCap=='Rel' & TAGNUM %in% unique(paired_data$TAGNUM)),colour='red',size=0.8)+
+  geom_sf(data=subset(pcc,RelCap=='Rel'),colour='pink',size=0.8)+
+  geom_sf(data=subset(pcc,RelCap=='Rel' & Tags %in% unique(paired_data$Tags)),colour='red',size=0.8)+
   cf
 
 bmap+
-  geom_sf(data=subset(xasu,RelCap=='Cap'),colour='pink',size=0.8)+
+  geom_sf(data=subset(pcc,RelCap=='Cap'),colour='pink',size=0.8)+
   cf
 
 
-
-ggplot(sPd,aes(x=Mark_ID,y=Recap_ID,fill=N_Recaptures))+
-  scale_fill_viridis_c(trans='log', labels = scales::label_number(accuracy = 1))+
+i = which(sPd$Mark_ID==35 & sPd$Recap_ID==27)
+sPd = sPd[-i,]
+ggplot(subset(sPd,Mark_ID %in% c(27,29,30,311,312,32,33,34,35,36,37,38,40,41) ),aes(x=Mark_ID,y=Recap_ID,fill=N_Recaptures))+
+  scale_fill_viridis_c(trans='log', breaks=c(1,10,50,400,3000), labels = scales::label_number(accuracy = 1))+
   geom_raster()+
   theme_test(base_size = 14)+
 labs(x='Release LFA', y='Recapture Fishing Area')
 
 
-pos = subset(po, Id>32)
+pos = po
 # Compute centroids
 
 cents = readRDS( file.path(bio.directory,'bio.lobster.data','mapping_data',"LFALabelsSF.rds"))
-cents = subset(cents,PID %in% c(33,34,35,36,37,38,40,41))
+#cents = subset(cents,PID %in% c(33,34,35,36,37,38,40,41))
 sf_cent_us <- st_centroid(us)
 
 # Create the plot

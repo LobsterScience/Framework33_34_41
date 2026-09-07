@@ -78,7 +78,7 @@ if('m1' %in% models){
   m <- sdmTMB(
     data = or1,
     formula = Legal_wt ~ SOURCE+s(lz), 
-    offset = survey$of,
+    offset = 'of',
     mesh = bspde,
     spatial = "on",
     family =  tweedie(link = "log"),
@@ -89,7 +89,7 @@ if('m1' %in% models){
   m_cv <- sdmTMB_cv(
     data = or1,
     formula = Legal_wt ~ SOURCE+s(lz), 
-    offset = survey$of,
+    offset = 'of',
     mesh = bspde,
     spatial = "on",
     family =  tweedie(link = "log"),
