@@ -19,35 +19,45 @@ setwd(fd)
 
 m = readRDS(file='ExtendedTS_LFA34_logs.rds')
 ca = m
-
+ dir.create('L34CPUE')
 ca$fYear = as.factor(ca$SYEAR)
 ca$SOURCE = as.factor(ca$SOURCE)
 ca$leffort = log(ca$NUM_OF_TRAPS)
-ca = subset(ca,!is.na(NUM_OF_TRAPS) & !is.na(WEIGHT_KG) & NUM_OF_TRAPS<=1200 & WEIGHT_KG>0& !is.na(bcT)& SYEAR<2026)
+ca = subset(ca,!is.na(NUM_OF_TRAPS) & !is.na(WEIGHT_KG) & NUM_OF_TRAPS<=1200 & WEIGHT_KG>0& !is.na(bcT)& SYEAR<2026&DOS<186)
 ca$CPUE = ca$WEIGHT_KG/ca$NUM_OF_TRAPS
+
 l34 = gam(WEIGHT_KG~fYear+offset(leffort),data=subset(ca),family = tw(link='log'),method='REML')
+saveRDS(l34,file='L34CPUE/l34.rds')
+
 l34b = bam(WEIGHT_KG~s(DOS)+fYear+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE)
+saveRDS(l34b,file='L34CPUE/l34b.rds')
+
 l34c = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
+saveRDS(l34c,file='L34CPUE/l34c.rds')
+
 l34dt = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+s(bcT)+s(GRID_NUM,bs='re')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
+saveRDS(l34dt,file='L34CPUE/l34dt.rds')
+
 l34d = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+s(GRID_NUM,bs='re')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
+saveRDS(l34d,file='L34CPUE/l34d.rds')
+
 l34bt = bam(WEIGHT_KG~s(DOS)+s(bcT)+fYear+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE)
+saveRDS(l34bt,file='L34CPUE/l34bt.rds')
+
 l34ct = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+s(bcT)+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
+saveRDS(l34ct,file='L34CPUE/l34ct.rds')
 
-#l34d = gam(WEIGHT_KG~s(DOS)+s(DOS,by=fYear)+fYear+s(bcT)+offset(leffort),data=subset(ca,LFA==34),family = Gamma(link='log'),method='REML')
-
-#saveRDS(list(l34,l34b,l34c),'first4CPUEmodels34.rds')
-lb = readRDS('first4CPUEmodels34.rds')
-l34 = lb[[1]]
-l34b = lb[[2]]
-l34c = lb[[3]]
+#l34 = lb[[1]]
+#l34b = lb[[2]]
+#l34c = lb[[3]]
 #saveRDS(list(l34d),'CPUEmodels34re_grid.rds')
-l34d=readRDS('CPUEmodels34re_grid.rds')[[1]]
+#l34d=readRDS('CPUEmodels34re_grid.rds')[[1]]
 
 
 library(dplyr)
 library(purrr)
 
-mods <- list(Base = l34,  BSD = l34b,BSDxY=l34c,BSDxYrG=l34d)
+mods <- list(Base = l34,  BSD = l34b,BSDxY=l34c,BSDxYrG=l34d, BSDt = l34bt, BSDxYt = l34ct, BSDxYrGt = l34dt)
 gam_table <- imap_dfr(mods, function(mod, name){
   
   s <- summary(mod)
@@ -154,7 +164,11 @@ ind$fYear=as.factor(ind$SYEAR)
         wts5 <- subset(wts5,SD_LOG_ID>500)
         wts5$wt <- wts5$SD_LOG_ID / sum(wts5$SD_LOG_ID)
         
-        
+ 	tdg = aggregate(bcT~DOS+GRID_NUM,data=ca,FUN=mean)       
+	wt3 = merge(tdg,wt3)
+
+	td = aggregate(bcT~DOS,data=ca,FUN=mean)
+	merge(
         
 ####annual index with observed effort by year
   get_index_effort_wt <- function(model, ind, n_sim=1000, effort=1,name){
