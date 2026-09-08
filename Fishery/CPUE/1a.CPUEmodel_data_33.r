@@ -10,7 +10,7 @@ setwd(file.path(project.datadirectory('Framework_LFA33_34_41')))
 
 ##temperature data
 
-d = readRDS(file=file.path(project.datadirectory('bio.lobster.glorys'),'Glorys2000_2025wBiasCorrColumn_doy_grid_agg_july29.rds'))
+d = readRDS(file=file.path(project.datadirectory('bio.lobster.glorys'),'Glorys1994_2025wBiasCorrColumn_doy_grid_agg_sept2.rds'))
 d$Date = as.Date(d$Date)
 d$bcT = d$bcT[,3]
 d$z = d$z[,1]
