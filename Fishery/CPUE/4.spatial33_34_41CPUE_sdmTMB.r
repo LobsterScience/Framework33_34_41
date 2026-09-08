@@ -20,9 +20,11 @@ ca = m[[3]]
 
 
 #one year for testing
-ca = subset(ca,SYEAR%in% 2014:2024 & LFA %ni% 41 & WEIGHT_KG>0 & !is.na(bcT) & NUM_OF_TRAPS>10)
-gtos = subset(gto, GRID_NO %in% unique(ca$GRID_NO))
 
+ca = subset(ca,SYEAR%in% 2003:2025 & LFA %ni% 41 & WEIGHT_KG>0 & !is.na(bcT) & NUM_OF_TRAPS>10)
+
+gtos = subset(gto, GRID_NO %in% unique(ca$GRID_NO) & LFA %ni% 41) 
+ca = aggregate(cbind(WEIGHT_KG,NUM_OF_TRAPS)~LFA+SYEAR+DOS+X+Y+bcT+GRID_NO+z+dist_to_shore,data=ca,FUN=sum)
 mes = sdmTMB::make_mesh(ca,xy_cols = c('X','Y'),n_knots=nrow(gtos)-1)
 
 
@@ -31,11 +33,11 @@ bspde <- sdmTMBextra::add_barrier_mesh(
   mes, ns_coast,range_fraction = .2,
   proj_scaling = 1, plot = TRUE
 )
-
-
-m4 = sdmTMB(WEIGHT_KG~ s(bcT)+s(DOS),
-            offset = 'leffort',
-            data=ca,
+cat = as_tibble(ca)
+cat$leffort = log(cat$NUM_OF_TRAPS)
+m3 = sdmTMB(WEIGHT_KG~ s(bcT)+s(DOS)+leffort
+            ,
+            data=cat,
             family = nbinom2(link='log') ,
             mesh = bspde,
             spatial='on',
@@ -43,11 +45,26 @@ m4 = sdmTMB(WEIGHT_KG~ s(bcT)+s(DOS),
            spatiotemporal='IID'
 )
 
-#include a trap saturation effect
-
-m5 = sdmTMB(WEIGHT_KG~ s(bcT)+s(DOS)+I(NUM_OF_TRAPS/(1+NUM_OF_TRAPS)),
+m4 = sdmTMB(WEIGHT_KG~ s(bcT)+s(DOS),
             offset = 'leffort',
-            data=ca,
+            data=cat,
+            family = nbinom2(link='log') ,
+            mesh = bspde,
+            spatial='on',
+            time='SYEAR',
+           spatiotemporal='IID'
+)
+
+#spatially varying smooth
+X <- as.data.frame(smoothCon(	s(DOS, k = 5),	data = cat)[[1]]$X)
+names(X) <- paste0("dos_basis_", seq_len(ncol(X)))
+cat <- cbind(cat, X)
+
+
+m5 = sdmTMB(WEIGHT_KG~ s(bcT),
+            offset = 'leffort',
+	   spatial_varying=~dos_basis_1+dos_basis_2+dos_basis_3+dos_basis_4,
+            data=cat,
             family = nbinom2(link='log') ,
             mesh = bspde,
             spatial='on',
@@ -55,8 +72,8 @@ m5 = sdmTMB(WEIGHT_KG~ s(bcT)+s(DOS)+I(NUM_OF_TRAPS/(1+NUM_OF_TRAPS)),
             spatiotemporal='IID'
 )
 
-cAIC(m4)
-cAIC(m5)
+#cAIC(m4)
+#cAIC(m5)
 
 # b = visreg::visreg(m5,xvar='bcT',scale='response')
 # t
@@ -68,10 +85,17 @@ cAIC(m5)
  yr = seq(min(ca$SYEAR),max(ca$SYEAR))
  NUM_OF_TRAPS=100
  leffort=log(100)
+
  t1 = expand.grid(DOS=dos,bcT=temps,SYEAR=yr,NUM_OF_TRAPS=NUM_OF_TRAPS,leffort=leffort)
+X <- as.data.frame(smoothCon(   s(DOS, k = 5),  data = t1)[[1]]$X)
+names(X) <- paste0("dos_basis_", seq_len(ncol(X)))
+t1 <- cbind(t1, X)
+
  pre = merge(gtos,t1)
+
+
  require(purrr)
-base_subsets <- map(1:800, function(i) {
+base_subsets <- map(1:3000, function(i) {
 			pre %>%
 			group_by(SYEAR) %>%
 			slice_sample(n = 1, replace = TRUE) %>%
@@ -81,12 +105,12 @@ sampled_ids <- bind_rows(base_subsets) %>% distinct()
 remaining_df <- anti_join(pre, sampled_ids)
 
 # Step 3: Randomly distribute remaining rows across the 200 subsets
-remaining_split <- split(remaining_df, rep(1:800, length.out = nrow(remaining_df)))
+remaining_split <- split(remaining_df, rep(1:3000, length.out = nrow(remaining_df)))
 
 # Step 4: Combine base samples with remaining rows
 final_subsets <- map2(base_subsets, remaining_split, bind_rows)
 
-years = unique(ca$SYEAR)
+years = unique(cat$SYEAR)
 for(i in 1:length(final_subsets)) {
 	        fs = final_subsets[[i]]
           fs = subset(fs, SYEAR %in% years)
@@ -95,6 +119,7 @@ for(i in 1:length(final_subsets)) {
 		        final_subsets[[i]] = fs
 		        saveRDS(fs, file=paste0('cpue_predictions',i,'.rds'))
 			        rm(fs,g)
+gc(reset=T)
 }
 
 fin = bind_rows(final_subsets)
