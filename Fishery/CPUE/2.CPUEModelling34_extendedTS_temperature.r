@@ -38,6 +38,10 @@ saveRDS(l34c,file='L34CPUE/l34c.rds')
 l34dt = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+s(bcT)+s(GRID_NUM,bs='re')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
 saveRDS(l34dt,file='L34CPUE/l34dt.rds')
 
+l34dlt = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+(bcT)+s(GRID_NUM,bs='re')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
+saveRDS(l34dt,file='L34CPUE/l34dlt.rds')
+
+
 l34d = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+s(GRID_NUM,bs='re')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
 saveRDS(l34d,file='L34CPUE/l34d.rds')
 
@@ -57,7 +61,7 @@ saveRDS(l34ct,file='L34CPUE/l34ct.rds')
 library(dplyr)
 library(purrr)
 
-mods <- list(Base = l34,  BSD = l34b,BSDxY=l34c,BSDxYrG=l34d, BSDt = l34bt, BSDxYt = l34ct, BSDxYrGt = l34dt)
+mods <- list(Base = l34,  BSD = l34b,BSDxY=l34c,BSDxYrG=l34d, BSDt = l34bt, BSDxYt = l34ct, BSDxYrGt = l34dt, BSDxYrGlt = l34dlt)
 gam_table <- imap_dfr(mods, function(mod, name){
   
   s <- summary(mod)
