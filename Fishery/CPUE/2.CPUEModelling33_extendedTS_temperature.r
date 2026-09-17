@@ -17,9 +17,9 @@ la()
 fd = file.path(project.datadirectory('Framework_LFA33_34_41'))
 setwd(fd)
 
-m = readRDS(file='ExtendedTS_LFA34_logs.rds')
+m = readRDS(file='ExtendedTS_LFA33_logs.rds')
 ca = m
- dir.create('L34CPUE')
+ dir.create('L33CPUE')
 ca$fYear = as.factor(ca$SYEAR)
 ca$SOURCE = as.factor(ca$SOURCE)
 ca$leffort = log(ca$NUM_OF_TRAPS)
@@ -27,48 +27,48 @@ ca = subset(ca,!is.na(NUM_OF_TRAPS) & !is.na(WEIGHT_KG) & NUM_OF_TRAPS<=1200 & W
 ca$CPUE = ca$WEIGHT_KG/ca$NUM_OF_TRAPS
 redo.models=F
 if(redo.models){
-l34 = gam(WEIGHT_KG~fYear+offset(leffort),data=subset(ca),family = tw(link='log'),method='REML')
-saveRDS(l34,file='L34CPUE/l34.rds')
+l33 = gam(WEIGHT_KG~fYear+offset(leffort),data=subset(ca),family = tw(link='log'),method='REML')
+saveRDS(l33,file='L33CPUE/l33.rds')
 
-l34b = bam(WEIGHT_KG~s(DOS)+fYear+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE)
-saveRDS(l34b,file='L34CPUE/l34b.rds')
+l33b = bam(WEIGHT_KG~s(DOS)+fYear+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE)
+saveRDS(l33b,file='L33CPUE/l33b.rds')
 
-l34c = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
-saveRDS(l34c,file='L34CPUE/l34c.rds')
+l33c = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
+saveRDS(l33c,file='L33CPUE/l33c.rds')
 
-l34dt = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+s(bcT)+s(GRID_NUM,bs='re')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
-saveRDS(l34dt,file='L34CPUE/l34dt.rds')
+l33dt = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+s(bcT)+s(GRID_NUM,bs='re')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
+saveRDS(l33dt,file='L33CPUE/l33dt.rds')
 
-l34d = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+s(GRID_NUM,bs='re')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
-saveRDS(l34d,file='L34CPUE/l34d.rds')
+l33d = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+s(GRID_NUM,bs='re')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
+saveRDS(l33d,file='L33CPUE/l33d.rds')
 
-l34bt = bam(WEIGHT_KG~s(DOS)+s(bcT)+fYear+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE)
-saveRDS(l34bt,file='L34CPUE/l34bt.rds')
+l33bt = bam(WEIGHT_KG~s(DOS)+s(bcT)+fYear+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE)
+saveRDS(l33bt,file='L33CPUE/l33bt.rds')
 
-l34ct = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+s(bcT)+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
-saveRDS(l34ct,file='L34CPUE/l34ct.rds')
+l33ct = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+s(bcT)+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
+saveRDS(l33ct,file='L33CPUE/l33ct.rds')
 
-l34dlt = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+(bcT)+s(GRID_NUM,bs='re')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
-saveRDS(l34dlt,file='L34CPUE/l34dlt.rds')
+l33dlt = bam(WEIGHT_KG~fYear+s(DOS,fYear,bs='fs')+(bcT)+s(GRID_NUM,bs='re')+offset(leffort),data=ca,family = tw(link='log'),method='fREML',discrete=TRUE,nthreads = (parallel::detectCores()-1))
+saveRDS(l33dlt,file='L33CPUE/l33dlt.rds')
 
 
 } else {
   
-  l34 = readRDS(file='L34CPUE/l34.rds')
-  l34b = readRDS(file='L34CPUE/l34b.rds')
-  l34c = readRDS(file='L34CPUE/l34c.rds')
-  l34dt = readRDS(file='L34CPUE/l34dt.rds')
-  l34d = readRDS(file='L34CPUE/l34d.rds')
-  l34bt = readRDS(file='L34CPUE/l34bt.rds')
-  l34ct = readRDS(file='L34CPUE/l34ct.rds')
-  l34dlt = readRDS(file='L34CPUE/l34dlt.rds')
+  l33 = readRDS(file='L33CPUE/l33.rds')
+  l33b = readRDS(file='L33CPUE/l33b.rds')
+  l33c = readRDS(file='L33CPUE/l33c.rds')
+  l33dt = readRDS(file='L33CPUE/l33dt.rds')
+  l33d = readRDS(file='L33CPUE/l33d.rds')
+  l33bt = readRDS(file='L33CPUE/l33bt.rds')
+  l33ct = readRDS(file='L33CPUE/l33ct.rds')
+  l33dlt = readRDS(file='L33CPUE/l33dlt.rds')
   
 }
 
 library(dplyr)
 library(purrr)
 
-mods <- list(Base = l34,  BSD = l34b,BSDxY=l34c,BSDxYrG=l34d, BSDt = l34bt, BSDxYt = l34ct, BSDxYrGt = l34dt,BSDxYrGLt = l34dlt)
+mods <- list(Base = l33,  BSD = l33b,BSDxY=l33c,BSDxYrG=l33d, BSDt = l33bt, BSDxYt = l33ct, BSDxYrGt = l33dt,BSDxYrGLt = l33dlt)
 gam_table <- imap_dfr(mods, function(mod, name){
   
   s <- summary(mod)
@@ -99,13 +99,13 @@ doc <- body_add_par(doc, "GAM Model Summary", style = "heading 1")
 doc <- body_add_flextable(doc, ft)
 
 # Save
-print(doc, target = "GAM_Model_SummaryL34.docx")
+print(doc, target = "GAM_Model_SummaryL33.docx")
 
-#w = readRDS('first4CPUEmodels34.rds')
-#l34 = w[[1]]
-#l34a = w[[2]]
-#l34b = w[[3]]
-#l34c = w[[4]]
+#w = readRDS('first4CPUEmodels33.rds')
+#l33 = w[[1]]
+#l33a = w[[2]]
+#l33b = w[[3]]
+#l33c = w[[4]]
 
 library(gratia)
 bcT_grid <- seq(min(ca$bcT), max(ca$bcT), length.out = 100)
@@ -114,7 +114,7 @@ mm <- sapply(bcT_grid, function(x){
             nd <- ca
             nd$bcT <- x
             nd$leffort = 0
-        mean(predict( l34dt,newdata = nd, type = "response",exclude = "s(GRID_NUM)"))
+        mean(predict( l33dt,newdata = nd, type = "response",exclude = "s(GRID_NUM)"))
         })
 
 
@@ -122,7 +122,7 @@ mml <- sapply(bcT_grid, function(x){
   nd <- ca
   nd$bcT <- x
   nd$leffort = 0
-  mean(predict( l34dlt,newdata = nd, type = "response",exclude = "s(GRID_NUM)"))
+  mean(predict( l33dlt,newdata = nd, type = "response",exclude = "s(GRID_NUM)"))
 })
 
 
@@ -137,7 +137,7 @@ lines(bcT_grid, mml,
 
 #################trip weighted marginal means
 aT=ca
-ind = aggregate(SD_LOG_ID~DOS+SYEAR,data=subset(aT,LFA ==34),FUN=function(x) length(unique(x)))
+ind = aggregate(SD_LOG_ID~DOS+SYEAR,data=subset(aT,LFA ==33),FUN=function(x) length(unique(x)))
 ind1 = aggregate(SD_LOG_ID~SYEAR,data=ind,FUN=sum)
 names(ind1)[2] = 'SumTrips'
 ind = merge(ind,ind1)
@@ -156,7 +156,7 @@ ind$fYear=as.factor(ind$SYEAR)
         wts2$wt = ind$prop        
         
 #wts by grid if included in the model        
-        ind = aggregate(SD_LOG_ID~DOS+SYEAR+GRID_NUM,data=subset(aT,LFA ==34),FUN=function(x) length(unique(x)))
+        ind = aggregate(SD_LOG_ID~DOS+SYEAR+GRID_NUM,data=subset(aT,LFA ==33),FUN=function(x) length(unique(x)))
         ind1 = aggregate(SD_LOG_ID~SYEAR,data=ind,FUN=sum)
         names(ind1)[2] = 'SumTrips'
         ind = merge(ind,ind1)
@@ -169,7 +169,7 @@ ind$fYear=as.factor(ind$SYEAR)
 
         
 #grids commonly fished
-        ind = aggregate(SD_LOG_ID~DOS+SYEAR+GRID_NUM,data=subset(aT,LFA ==34),FUN=function(x) length(unique(x)))
+        ind = aggregate(SD_LOG_ID~DOS+SYEAR+GRID_NUM,data=subset(aT,LFA ==33),FUN=function(x) length(unique(x)))
         grid_years <- aggregate(SYEAR ~ GRID_NUM,  data = unique(ind[, c("SYEAR", "GRID_NUM")]),  FUN = length)
         names(grid_years)[2] <- "n_years"
         grid_years <- grid_years[order(-grid_years$n_years), ]
@@ -186,7 +186,7 @@ ind$fYear=as.factor(ind$SYEAR)
         wts4$wt <- wts4$SD_LOG_ID / sum(wts4$SD_LOG_ID)
         
         
-        ind = aggregate(SD_LOG_ID~DOS+SYEAR+GRID_NUM,data=subset(aT,LFA ==34),FUN=function(x) length(unique(x)))
+        ind = aggregate(SD_LOG_ID~DOS+SYEAR+GRID_NUM,data=subset(aT,LFA ==33),FUN=function(x) length(unique(x)))
         grid_years <- aggregate(SYEAR ~ GRID_NUM,  data = unique(ind[, c("SYEAR", "GRID_NUM")]),  FUN = length)
         names(grid_years)[2] <- "n_years"
         grid_years <- grid_years[order(-grid_years$n_years), ]
@@ -256,17 +256,17 @@ get_index_effort <- function(model, ind, n_sim=1000, effort=1,name){
           bind_rows(res)
         }
         
-l34p = get_index_effort(l34,name='Base',ind = wts3)
-l34bp = get_index_effort(l34b,name='BSD',ind = wts3)
-l34cp = get_index_effort(l34c,name='BSDxY',ind = wts3)
-l34dp = get_index_effort(l34d,name='BSDxYrG',ind = wts3)
-l34dpl = get_index_effort(l34dlt,name='BSDxYrGt',ind = wt3)
+l33p = get_index_effort(l33,name='Base',ind = wts3)
+l33bp = get_index_effort(l33b,name='BSD',ind = wts3)
+l33cp = get_index_effort(l33c,name='BSDxY',ind = wts3)
+l33dp = get_index_effort(l33d,name='BSDxYrG',ind = wts3)
+l33dpl = get_index_effort(l33dlt,name='BSDxYrGt',ind = wt3)
 
-l34dp_core_grids = get_index_effort(l34dlt,name='BSDxYrG_co',ind = wts4)
+l33dp_core_grids = get_index_effort(l33dlt,name='BSDxYrG_co',ind = wts4)
 
-l34dp_non_core_grids = get_index_effort(l34dlt,name='BSDxYrG_nc',ind = wts5)
+l33dp_non_core_grids = get_index_effort(l33dlt,name='BSDxYrG_nc',ind = wts5)
 
-com = bind_rows(list(l34p,l34bp,l34cp,l34dp,l34dpl,l34dp_core_grids,l34dp_non_core_grids))
+com = bind_rows(list(l33p,l33bp,l33cp,l33dp,l33dpl,l33dp_core_grids,l33dp_non_core_grids))
 ####CPUE 
 
 aa = split(ca,f=list(ca$LFA,ca$SYEAR))
@@ -331,7 +331,7 @@ ggplot(
     panel.grid.minor = element_blank(),
     panel.spacing = unit(0.8, "lines")
   )
-ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/LFA34_cpue89-00.png')
+ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/LFA33_cpue89-00.png')
 
 ggplot(
   subset(cc, yr %in% 2001:2012),
@@ -369,7 +369,7 @@ ggplot(
     panel.grid.minor = element_blank(),
     panel.spacing = unit(0.8, "lines")
   )
-ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/LFA34_cpue00-12.png')
+ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/LFA33_cpue00-12.png')
 
 ggplot(
   subset(cc, yr %in% 2013:2025),
@@ -408,7 +408,7 @@ ggplot(
     panel.spacing = unit(0.8, "lines")
   )
 
-ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/LFA34_cpue13-25.png')
+ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/LFA33_cpue13-25.png')
 
 
 cap =as.data.frame(do.call(rbind,cpue.ann))
@@ -419,7 +419,7 @@ names(cap) = names(com)[c(1,7,2,5,6)]
 com = bind_rows(com,cap)
 
 
-write.csv(com,'LFA34MultipleModelsCPUE.csv')
+write.csv(com,'LFA33MultipleModelsCPUE.csv')
 #marginal mean, internally consistent
 
 
@@ -450,7 +450,7 @@ ggplot(subset(com,SYEAR<2026 & SYEAR>1994 & model %ni% c('BS','BSDxYrG_co','BSDx
   xlab('Fishing Season')+
   ylab('Weighted Marginal Mean CPUE')+
   theme_test(base_size = 14)
-ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/LFA34_marginalCPUE_commonseasonwts_main.png')
+ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/LFA33_marginalCPUE_commonseasonwts_main.png')
 
 
 ggplot(subset(com,SYEAR<2026 & SYEAR>1994 & model %in% c('BSDxYrG','BSDxYrG_co','BSDxYrG_nc')), aes(x = SYEAR, y = mean ,colour=model,fill=model)) +
@@ -460,4 +460,4 @@ ggplot(subset(com,SYEAR<2026 & SYEAR>1994 & model %in% c('BSDxYrG','BSDxYrG_co',
   xlab('Fishing Season')+
   ylab('Weighted Marginal Mean CPUE')+
   theme_test(base_size = 14)
-ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/LFA34_marginalCPUE_commonseasonwts_regrid.png')
+ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/LFA33_marginalCPUE_commonseasonwts_regrid.png')
