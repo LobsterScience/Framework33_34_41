@@ -15,6 +15,8 @@ d$Date = as.Date(d$Date)
 d$bcT = d$bcT[,3]
 d$z = d$z[,1]
 d = subset(d,select=c(LFA,GRID_NO,yr,doy,bcT,z))
+d = subset(d,LFA==33)
+x = table(d$GRID_NO)
 
 #ggplot(subset(te,GRID_NO==303),aes(x=as.Date(Date),y=bcT[,3]))+geom_line()
 
@@ -30,7 +32,7 @@ v = subset(v,LFA %in% c('33' ))
 
 #assign port code to most common grid
 vPC = unique(v$PORT_CODE)
-gPC = aggregate(SD_LOG_ID~GRID_NUM+LFA+COMMUNITY_CODE, data=subset(g, LFA==33 & SYEAR<=2020 & COMMUNITY_CODE %in% vPC),FUN=length)
+gPC = aggregate(SD_LOG_ID~GRID_NUM+LFA+COMMUNITY_CODE, data=subset(g, LFA==33 & SYEAR<=2026 & COMMUNITY_CODE %in% vPC),FUN=length)
 library(dplyr)
 
 com_grid = gPC %>%
@@ -38,6 +40,10 @@ com_grid = gPC %>%
   summarise(total_SD_LOG_ID = sum(SD_LOG_ID), .groups = "drop") %>%
   group_by(COMMUNITY_CODE) %>%
   slice_max(total_SD_LOG_ID, n = 1, with_ties = FALSE)
+
+pos = st_as_sf(subset(po,PORT_CODE %in% com_grid$COMMUNITY_CODE),coords=c('CENTLON','CENTLAT'),crs=4326)
+o = ggLobsterMap('33',addGrids = T, addGridLabels = T,return.object = T,colourGrid = list(c(com_grid$GRID_NUM)))
+o+geom_sf(data=pos,colour='red')
 
 v = merge(v,com_grid[,c('COMMUNITY_CODE','GRID_NUM')],by.x=c('PORT_CODE'),by.y='COMMUNITY_CODE')
 v = subset(v,select=c(LFA,DATE_FISHED,SYEAR,UNIQUE_FISHER, WOS, DOS, GRID_NUM,PORT_CODE, N_TRP,W_KG ))

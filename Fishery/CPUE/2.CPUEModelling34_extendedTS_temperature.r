@@ -72,11 +72,7 @@ saveRDS(l34dlt,file='L34CPUE/l34dlt.rds')
 library(dplyr)
 library(purrr)
 
-<<<<<<< HEAD
-mods <- list(Base = l34,  BSD = l34b,BSDxY=l34c,BSDxYrG=l34d, BSDt = l34bt, BSDxYt = l34ct, BSDxYrGt = l34dt,BSDxYrGLt = l34dlt)
-=======
 mods <- list(Base = l34,  BSD = l34b,BSDxY=l34c,BSDxYrG=l34d, BSDt = l34bt, BSDxYt = l34ct, BSDxYrGt = l34dt, BSDxYrGlt = l34dlt)
->>>>>>> ad7158b7a6fbd02c4b20b219734b95b136754bef
 gam_table <- imap_dfr(mods, function(mod, name){
   
   s <- summary(mod)
@@ -469,3 +465,7 @@ ggplot(subset(com,SYEAR<2026 & SYEAR>1994 & model %in% c('BSDxYrG','BSDxYrG_co',
   ylab('Weighted Marginal Mean CPUE')+
   theme_test(base_size = 14)
 ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/LFA34_marginalCPUE_commonseasonwts_regrid.png')
+
+ggLobsterMap('34',addGrids = T,colourGrid = list(c(92,103,139,140,157,156)),return.object = T,addLFALabels = T,LFA_label_size = 6)
+ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Figures/LFA34_core_grids.png')
+

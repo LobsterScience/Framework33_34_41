@@ -19,6 +19,8 @@ setwd(fd)
 
 m = readRDS(file='ExtendedTS_LFA33_logs.rds')
 ca = m
+
+#inshore temperature is missing from some grids.... need to fix sept 18 2026
  dir.create('L33CPUE')
 ca$fYear = as.factor(ca$SYEAR)
 ca$SOURCE = as.factor(ca$SOURCE)
@@ -174,7 +176,7 @@ ind$fYear=as.factor(ind$SYEAR)
         names(grid_years)[2] <- "n_years"
         grid_years <- grid_years[order(-grid_years$n_years), ]
         
-        ind = subset(ind,GRID_NUM %in% c(92,103,139,140,157,156))
+        ind = subset(ind,GRID_NUM %in% c(301,305,306,309,314))
         ind1 = aggregate(SD_LOG_ID~SYEAR,data=ind,FUN=sum)
         names(ind1)[2] = 'SumTrips'
         ind = merge(ind,ind1)
@@ -191,7 +193,8 @@ ind$fYear=as.factor(ind$SYEAR)
         names(grid_years)[2] <- "n_years"
         grid_years <- grid_years[order(-grid_years$n_years), ]
         
-        ind = subset(ind,GRID_NUM %ni% c(92,103,139,140,157,156))
+        v = aggregate(SYEAR~GRID_NUM,data=aT,FUN=function(x) length(unique(x)))
+        ind = subset(ind,GRID_NUM %ni% c(301,305,306,309,314))
         ind1 = aggregate(SD_LOG_ID~SYEAR,data=ind,FUN=sum)
         names(ind1)[2] = 'SumTrips'
         ind = merge(ind,ind1)
@@ -443,7 +446,7 @@ ggplot(subset(com,SYEAR<2026 & SYEAR>1994 & model %ni% c('BS','BSDxYrG_co','BSDx
   theme_test(base_size = 14)
 
 
-ggplot(subset(com,SYEAR<2026 & SYEAR>1994 & model %ni% c('BS','BSDxYrG_co','BSDxYrG_nc')), aes(x = SYEAR, y = mean ,colour=model,fill=model)) +
+ggplot(subset(com,SYEAR<2026 & SYEAR>1994 & model %in% c('BS','BSDxYrG_co','BSDxYrG_nc')), aes(x = SYEAR, y = mean ,colour=model,fill=model)) +
   geom_line(linewidth=0.8) +
   geom_errorbar(aes(ymin = lwr, ymax = upr), width=0.2)+
   #scale_color_discrete(begin = 0, end = 1, option = 'viridis')+
