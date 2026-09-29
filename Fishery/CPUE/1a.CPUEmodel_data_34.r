@@ -54,6 +54,36 @@ aT$yr = lubridate::year(aT$DATE_FISHED)
 
 aT = merge(aT,d,by.x=c('LFA','DOY','GRID_NUM','yr'),by.y=c('LFA','doy','GRID_NO','yr'),all.x=T)
 
+g140 <- d %>%
+  filter(GRID_NO == 140, !is.na(bcT)) %>%
+  group_by(yr, doy) %>%
+  summarise(bcT140 = first(bcT), .groups = "drop")
+# fill NAs in grid 141
+names(g140)[2] = 'DOY'
+
+aT <- aT %>%
+  left_join(g140, by = c("yr", "DOY")) %>%
+  mutate(
+    bcT = ifelse(GRID_NO == 141 & is.na(bcT), bcT140, bcT)
+  ) %>%
+  select(-bcT140)
+
+g301 <- d %>%
+  filter(GRID_NO == 301, !is.na(bcT)) %>%
+  group_by(yr, doy) %>%
+  summarise(bcT301 = first(bcT), .groups = "drop")
+names(g301)[2] = 'DOY'
+# fill NAs in grid 141
+
+aT <- aT %>%
+  left_join(g301, by = c("yr", "DOY")) %>%
+  mutate(
+    bcT = ifelse(GRID_NO == 159 & is.na(bcT), bcT301, bcT)
+  ) %>%
+  select(-bcT301)
+
+
+
 #####
 saveRDS(aT, 'ExtendedTS_LFA34_logs.rds')
 

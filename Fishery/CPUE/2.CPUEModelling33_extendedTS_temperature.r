@@ -116,7 +116,7 @@ mm <- sapply(bcT_grid, function(x){
             nd <- ca
             nd$bcT <- x
             nd$leffort = 0
-        mean(predict( l33dt,newdata = nd, type = "response",exclude = "s(GRID_NUM)"))
+        mean(predict( l33dt,newdata = nd, type = "response"))
         })
 
 
@@ -124,7 +124,7 @@ mml <- sapply(bcT_grid, function(x){
   nd <- ca
   nd$bcT <- x
   nd$leffort = 0
-  mean(predict( l33dlt,newdata = nd, type = "response",exclude = "s(GRID_NUM)"))
+  mean(predict( l33dlt,newdata = nd, type = "response"))
 })
 
 
