@@ -95,42 +95,33 @@ xas$DATE = as.Date(xas$DATE)
 xasu=st_transform(xas,crs=32620)
 
 #ours and SWLSS tagging
-fb = "R:\\Science\\Population Ecology Division\\Shared\\!PED_Unit17_Lobster\\Lobster Unit Shared\\Projects and Programs\\Tagging\\Master_data"
-v = readxl::read_xlsx(file.path(fb,"SWLSS_releases20240229.xlsx" ))
-w = readxl::read_xlsx(file.path(fb,"XY_releases_2021_2026_master.xlsx"  ))
-wv = readxl::read_xlsx(file.path(fb,"LBT_RECAPTURES.xlsx"  ))
+require(LobTag2)
+get_table("recaptures", "Oracle")
+get_table("releases", "Oracle")
 
-w$LAT_DD = w$LAT_DEGREES+w$LAT_MINUTES/60
-w$LON_DD = (w$LON_DEGREES-(w$LON_MINUTES/60) )
-
-v$LAT_DD = v$LAT_DEGREES+v$LAT_MINUTES/60
-v$LON_DD = (v$LON_DEGREES-(v$LON_MINUTES/60)) * -1
+vw = releases
+wv = recaptures
 
 #only recaps
-
-wv = subset(wv,select=c(TAG_PREFIX,TAG_NUMBER, DAY, MONTH, YEAR, LAT_DD,LON_DD,CAPTURE_LENGTH,SEX))
+wv$DATE = wv$REC_DATE
+wv$TAGNUM = wv$TAG_NUMBER
+wv = subset(wv,select=c(TAG_PREFIX,TAGNUM, DATE, LAT_DD,LON_DD,CAPTURE_LENGTH,SEX))
+vw$DATE = vw$REL_DATE
 wv$Relcap = 'Cap'
-w = subset(w,select=c(TAG_PREFIX,TAG_NUM, DAY, MONTH, YEAR, LAT_DD,LON_DD,CARAPACE_LENGTH,SEX))
+vw$TAGNUM=vw$TAG_NUM
+w = subset(vw,select=c(TAG_PREFIX,TAGNUM, DATE, LAT_DD,LON_DD,CARAPACE_LENGTH,SEX))
 w$Relcap = 'Rel'
 
-v = subset(v,select=c(TAG_PREFIX,TAG_NUM, CARAPACE_LENGTH, SEX,DAY,MONTH,YEAR,LON_DD,LAT_DD))
-v$Relcap = 'Rel'
 
-names(wv)[c(2,8)] = c('TAG_NUM','CARAPACE_LENGTH')
+wv$id = paste(wv$TAG_PREFIX,wv$TAGNUM,sep="_")
+w$id = paste(w$TAG_PREFIX,w$TAGNUM,sep="_")
+require(dplyr)
+wv = wv %>% mutate_at(c(2,4:7), as.numeric)
+w = w %>% mutate_at(c(2,4:7), as.numeric)
 
-wv$id = paste(wv$TAG_PREFIX,wv$TAG_NUM,sep="_")
-v$id = paste(v$TAG_PREFIX,v$TAG_NUM,sep="_")
-w$id = paste(w$TAG_PREFIX,w$TAG_NUM,sep="_")
-
-wv = wv %>% mutate_at(2:9, as.numeric)
-w = w %>% mutate_at(2:9, as.numeric)
-v = v %>% mutate_at(2:9, as.numeric)
-
-vp = subset(v,id %in% unique(wv$id))
 wp = subset(w,id %in% unique(wv$id))
 
-cp = bind_rows(list(wv,wp,vp))
-cp$DATE = as.Date(paste(cp$YEAR,cp$MONTH,cp$DAY,sep="-"))
+cp = bind_rows(list(wv,wp))
 pd <- cp %>%
       group_by(id) %>%
         filter(n()>1) %>%
@@ -149,20 +140,23 @@ bmap+
 
 xasu$Tags = paste(xasu$Source,xasu$TAGNUM,xasu$TAGTYPE,sep="-")
 xx = subset(xasu, select=c(Tags, DATE, SEX, EGG,CL, RelCap))
-pdd$Tags = paste(pdd$TAG_PREFIX,pdd$TAG_NUM,sep="-")
+tt <- table(xx$Tags)
+xx <- subset(xx, Tags %in% names(tt[tt >= 2]))
+pdd$Tags = paste(pdd$TAG_PREFIX,pdd$TAGNUM,sep="-")
 pdd$EGG = ifelse(pdd$SEX==3,1,NA)
 pdd$CL = pdd$CARAPACE_LENGTH
+pdd$DATE = as.Date(pdd$DATE)
 px = subset(pdd, select=c(Tags, DATE, SEX, EGG,CL, Relcap))
 pcc = bind_rows(px,xx)
 ##summary data
-
+saveRDS(pcc,'MartimesLobsterTagging.rds')
 library(geosphere)
 require(gdistance)
 
 # Pair release and recapture events
 paired_data <- pcc %>%
   group_by(Tags) %>%
-  filter(n() == 2) %>%  # Ensure each animal has both events
+  filter(n() >= 2) %>%  # Ensure each animal has both events
   arrange(DATE) %>%     # Sort by date
   summarise(
     release = first(geometry),

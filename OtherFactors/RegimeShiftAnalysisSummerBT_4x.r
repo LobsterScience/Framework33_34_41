@@ -97,13 +97,13 @@ ns_coast <- suppressWarnings(suppressMessages(
 ns_coast <- st_transform(ns_coast, 32620)
 
 ggplot()+geom_sf(data=ns_coast)+
- geom_sf(data=subset(ld,year%in%c(2012,2016,2020,2023,2024,2025)),aes(fill=Anomaly,colour=Anomaly),size=1)+
+ geom_sf(data=subset(ld,year%in%c(2012,2016,2020,2024,2025,2026)),aes(fill=Anomaly,colour=Anomaly),size=1)+
  scale_color_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0)+
  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0)+
    theme_test_adam()+
  facet_wrap(~year)+
  coord_sf()
-
+ggsave('BT_anomaly_surface.png',width = 8,height = 4, units = 'in')
 
 ag = aggregate(Anomaly~year,data=ld,FUN=mean)
 agm <- ag %>%
@@ -151,5 +151,5 @@ tm = ggplot(agm,aes(x=year,y=Anomaly))+geom_line()+geom_point(shape=1,size=2.5)+
   annotate("text", x = 2019, y = -1.7, label = 'Mean = 7.63\u00B0C ' ,
             size = 5, color = "black")+
   theme_test(base_size = 14)+labs(x='Year',y='Temperature Anomaly')
-
+ggsave('BT_trends.png',width = 8,height = 5,units = 'in')
 saveRDS(list(agm,rr,rf,sd(ld$clim)),file='BTAnom4x.rds')
