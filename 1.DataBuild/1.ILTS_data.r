@@ -22,7 +22,7 @@ us = st_as_sf(readRDS(file.path(git.repo,'bio.lobster.data','mapping_data','US_F
 us = subset(us,Stock %ni% 'CAN')
 us = st_transform(us,crs=4326)
 sf_use_s2(FALSE) #needed for cropping
-
+testing this out
 co = suppressWarnings(suppressMessages(st_crop(co,xmin=-74,ymin=40,xmax=-57,ymax=48)))
 po = suppressWarnings(suppressMessages(st_crop(po,xmin=-74,ymin=40,xmax=-56,ymax=48)))
 go = suppressWarnings(suppressMessages(st_crop(gs,xmin=-70,ymin=41,xmax=-62,ymax=46)))
