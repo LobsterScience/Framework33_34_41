@@ -34,3 +34,5 @@ ILTS_ITQ_All_Data(redo_set_data = T, redo_base_data = T, biomass = F)
 #glorys bias corrected model needs to be run.
 
 lobster.db('temperature.data.redo')
+
+bio.lobster.glorys/inst/Analysis/CreateBiasCorr
