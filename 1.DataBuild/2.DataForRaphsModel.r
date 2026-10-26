@@ -1,4 +1,3 @@
-require(bio.lobster)
 require(devtools)
 require(sf)
 require(bio.utilities)
@@ -22,7 +21,7 @@ us = st_as_sf(readRDS(file.path(git.repo,'bio.lobster.data','mapping_data','US_F
 us = subset(us,Stock %ni% 'CAN')
 us = st_transform(us,crs=4326)
 sf_use_s2(FALSE) #needed for cropping
-testing this out
+
 co = suppressWarnings(suppressMessages(st_crop(co,xmin=-74,ymin=40,xmax=-57,ymax=48)))
 po = suppressWarnings(suppressMessages(st_crop(po,xmin=-74,ymin=40,xmax=-56,ymax=48)))
 go = suppressWarnings(suppressMessages(st_crop(gs,xmin=-70,ymin=41,xmax=-62,ymax=46)))
@@ -46,16 +45,16 @@ library(dplyr)
 library(tidyr)
 il$id = paste(il$TRIP_ID,il$SET_NO,sep="_")
 ilts_shell <- il %>%                 ``
-  group_by(
-id,
-    SHELL
-  ) %>%
+group_by(
+  id,
+  SHELL
+) %>%
   summarise(
     shell_wt = sum(CALC_WT_G, na.rm = TRUE),
     .groups = "drop"
   ) %>%
   group_by(
-  id) %>%
+    id) %>%
   mutate(
     prop_wt = shell_wt / sum(shell_wt)
   ) %>%
@@ -90,7 +89,7 @@ library(tidyr)
 
 molt_props <- mei %>%
   group_by(
-id,
+    id,
     molt_stage
   ) %>%
   summarise(
@@ -98,7 +97,7 @@ id,
     .groups = "drop"
   ) %>%
   group_by(
-  id) %>%
+    id) %>%
   mutate(
     prop_wt = molt_wt / sum(molt_wt)
   ) %>%
@@ -144,25 +143,25 @@ hulls2 <- v1 %>%
   st_convex_hull()
 
 cc <- v1 %>%
-group_by(cluster40) %>%
-summarise(
-  mean_soft = mean(SOFT, na.rm = TRUE),
-  mean_lob = mean(Lobster, na.rm = TRUE),
-  n = n()
-)
+  group_by(cluster40) %>%
+  summarise(
+    mean_soft = mean(SOFT, na.rm = TRUE),
+    mean_lob = mean(Lobster, na.rm = TRUE),
+    n = n()
+  )
 ggplot() +
   geom_sf(data = hulls2,
           fill ='red',
           colour = "black",
           linewidth = 0.3) +
   geom_sf(data = subset(hulls2,cluster40 %in% subset(cc,mean_soft>.1)$cluster40),
-        fill ='blue',
-        colour = "red",
-        linewidth = 0.3) +
-geom_sf(data = v1,
-        aes(),
-        size = .2)
-  
+          fill ='blue',
+          colour = "red",
+          linewidth = 0.3) +
+  geom_sf(data = v1,
+          aes(),
+          size = .2)
+
 
 require(ggeffects)
 library(ggeffects)

@@ -8,8 +8,14 @@ require(dplyr)
 require(ggplot2)
 
 la()
-
-
+p = list()
+p$yrs = 2026
+lobster.db('logs.redo',pH=p)
+lobster.db('process.logs.redo')
+lobster.db('annual.landings.redo')
+lobster.db('seasonal.landings.redo')
+lobster.db('slips.redo')
+lobster.db('landings_by_vessel.redo')
 lobster.db('logs41.redo')
 lobster.db('greyzone_logs.redo')
 lobster.db('fsrs.redo')
