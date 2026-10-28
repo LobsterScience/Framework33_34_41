@@ -56,10 +56,10 @@ survey$lz = log(survey$z)
 survey$IDS = "I"
 or1 = as_tibble(survey)
 or1 = cv_SpaceTimeFolds(or1,idCol = 'IDS', nfolds=5)
-path=file.path('Model_outputs/models_Oct26')
+path=file.path('Model_outputs/models_Oct28')
 dir.create(path,recursive = T)
 #source(('C:/Users/cooka/Documents/git/Framework_LFA33_34_41/3.STModel/setupMultimodelTable.r'))
- source('/home/cooka@ENT/git/Framework33_34_41/3.STModel/setupMultimodelTable.r')
+# source('/home/cooka@ENT/git/Framework33_34_41/3.STModel/setupMultimodelTable.r')
 models = c('m1','m2','m3','m4','m5','m6')
 ################################################################################################################################
 if('m1' %in% models){
@@ -88,11 +88,44 @@ if('m1' %in% models){
     k_folds = 5
   )
   m1 = m
-  ca <-mod.select.fn()
-  mod.select <- rbind(mod.select, ca)
+  ca <-sdmTMB_cv_stats(response_var = 'Lobster',offset_var = 'of')
+  mod.select <- ca
   saveRDS(m,file=file.path(path,paste0('totlobster_',mod.label,'.rds')))
   saveRDS(mod.select,file=file.path(path,'totlobster_model_selection.rds'))
 }
+if('m1d' %in% models){
+  mod.label <- "m1d" 
+  m <- sdmTMB(
+    data = or1,
+    formula = Lobster ~ 0+SOURCE, 
+    offset = or1$of,
+    mesh = bspde,
+    spatial = "on",
+    family =  delta_truncated_nbinom2(),
+    time = "YEAR",
+    spatiotemporal = "ar1"
+  )
+  
+  m_cv <- sdmTMB_cv(
+    data = or1,
+    formula = Lobster ~ 0+SOURCE, 
+    offset = 'of',
+    mesh = bspde,
+    spatial = "on",
+    family =  delta_truncated_nbinom2(),
+    time = "YEAR",
+    spatiotemporal = "ar1",
+    fold_ids='fold_id',
+    k_folds = 5
+  )
+  m1 = m
+  ca <-sdmTMB_cv_stats(response_var = 'Lobster',offset_var = 'of')
+  mod.select <- bind_rows(mod.select,ca)
+  saveRDS(m,file=file.path(path,paste0('totlobster_',mod.label,'.rds')))
+  saveRDS(mod.select,file=file.path(path,'totlobster_model_selection.rds'))
+}
+
+
 
 if('m2' %in% models){
   mod.label <- "m2" 
@@ -120,8 +153,8 @@ if('m2' %in% models){
     k_folds = 5
   )
   m2 = m
-  ca <-mod.select.fn()
-  mod.select <- rbind(mod.select, ca)
+  ca <-sdmTMB_cv_stats(response_var = 'Lobster',offset_var = 'of')
+  mod.select <- bind_rows(mod.select,ca)
   saveRDS(m,file=file.path(path,paste0('totlobster_',mod.label,'.rds')))
   saveRDS(mod.select,file=file.path(path,'totlobster_model_selection.rds'))
 }
@@ -152,8 +185,8 @@ if('m3' %in% models){
     k_folds = 5
   )
   m3 = m
-  ca <-mod.select.fn()
-  mod.select <- rbind(mod.select, ca)
+  ca <-sdmTMB_cv_stats(response_var = 'Lobster',offset_var = 'of')
+  mod.select <- bind_rows(mod.select,ca)
   saveRDS(m,file=file.path(path,paste0('totlobster_',mod.label,'.rds')))
   saveRDS(mod.select,file=file.path(path,'totlobster_model_selection.rds'))
 }
@@ -184,8 +217,8 @@ if('m4' %in% models){
     k_folds = 5
   )
   m4 = m
-  ca <-mod.select.fn()
-  mod.select <- rbind(mod.select, ca)
+  ca <-sdmTMB_cv_stats(response_var = 'Lobster',offset_var = 'of')
+  mod.select <- bind_rows(mod.select,ca)
   saveRDS(m,file=file.path(path,paste0('totlobster_',mod.label,'.rds')))
   saveRDS(mod.select,file=file.path(path,'totlobster_model_selection.rds'))
 }
@@ -216,8 +249,8 @@ if('m5' %in% models){
     k_folds = 5
   )
   m5 = m
-  ca <-mod.select.fn()
-  mod.select <- rbind(mod.select, ca)
+  ca <-sdmTMB_cv_stats(response_var = 'Lobster',offset_var = 'of')
+  mod.select <- bind_rows(mod.select,ca)
   saveRDS(m,file=file.path(path,paste0('totlobster_',mod.label,'.rds')))
   saveRDS(mod.select,file=file.path(path,'totlobster_model_selection.rds'))
 }
@@ -248,8 +281,8 @@ if('m6' %in% models){
     k_folds = 5
   )
   m6 = m
-  ca <-mod.select.fn()
-  mod.select <- rbind(mod.select, ca)
+  ca <-sdmTMB_cv_stats(response_var = 'Lobster',offset_var = 'of')
+  mod.select <- bind_rows(mod.select,ca)
   saveRDS(m,file=file.path(path,paste0('totlobster_',mod.label,'.rds')))
   saveRDS(mod.select,file=file.path(path,'totlobster_model_selection.rds'))
 }

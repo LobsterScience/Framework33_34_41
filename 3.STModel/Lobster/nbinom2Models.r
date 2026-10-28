@@ -89,9 +89,10 @@ m2 <- sdmTMB(
   spatiotemporal = "ar1"
 )
 
+re = residuals(m2)
 
 s_m = simulate(m2,nsim=500,type='mle-mvn')
-r_m = sdmTMB::dharma_residuals(s_m,m,return_DHARMa=T)
+r_m = sdmTMB::dharma_residuals(s_m,m2,return_DHARMa=T)
 plot(r_m)
 DHARMa::testResiduals(r_m)
 DHARMa::testSpatialAutocorrelation(r_m,x=survey$X1000,y=survey$Y1000)

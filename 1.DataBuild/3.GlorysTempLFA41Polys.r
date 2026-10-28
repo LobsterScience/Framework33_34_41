@@ -26,3 +26,16 @@ aggTemp = aggregate(gloryTemp~Month+YR+OFFAREA,data=tps,FUN=mean)
 
 saveRDS(tps,'OffshoreGlorysTemperatures_withBC.r')
 ggplot(subset(aggTemp,Month %in% c(3,7)),aes(YR, gloryTemp,colour=OFFAREA))+geom_point()+geom_smooth()+facet_wrap(~Month)
+
+
+cw = lobster.db('cw.temperature.data')
+cw = st_as_sf(subset(cw,!is.na(LAT_DD)),coords=c('LON_DD','LAT_DD'),crs=4326)
+cw = st_transform(cw,crs=32620)
+st_geometry(cw) = st_geometry(cw)/1000
+st_crs(cw) <- 32620
+
+cw = st_join(cw,po)
+cw = subset(cw,!is.na(OFFAREA))
+cw$Month = lubridate::month(cw$DateSet)
+cw$YR = lubridate::year(cw$DateSet)
+cwa = aggregate(Temp~YR+Month+OFFAREA,data=cw,FUN=mean)
