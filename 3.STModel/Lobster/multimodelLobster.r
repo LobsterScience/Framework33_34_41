@@ -1,4 +1,7 @@
 
+# source('/home/cooka@ENT/git/Framework33_34_41/3.STModel/Lobster/multimodelLobster.r')
+
+
 require(tidyr)
 require(sdmTMB)
 require(sdmTMBextra)
@@ -24,7 +27,7 @@ aT = a[[1]]
 bB = a[[2]]
 cC = a[[3]]
 
-aT = subset(aT,SOURCE %ni% 'MNR')
+aT = subset(aT,SOURCE %ni% 'MNR' & lubridate::month(DATE)%in% c(6,7,8))
 
 sf_use_s2(FALSE) #needed for cropping
 aT$X1000 <- st_coordinates(aT)[,1]
@@ -34,8 +37,8 @@ survey = as_tibble(subset(aT,z>0 & !is.na(Lobster)))
 survey$of = log(as.numeric(survey$OFFSET))
 
 spde <- make_mesh(survey, xy_cols = c("X1000", "Y1000"),
-                  cutoff = 16)
-plot(spde)
+                  cutoff = 12)
+#plot(spde)
 #n vertices
 spde$mesh$n
 
@@ -50,15 +53,14 @@ bspde <- add_barrier_mesh(
 i = which(survey$SOURCE=='Snow crab survey')
 survey$lz = log(survey$z)
 
-
 survey$IDS = "I"
 or1 = as_tibble(survey)
 or1 = cv_SpaceTimeFolds(or1,idCol = 'IDS', nfolds=5)
 path=file.path('Model_outputs/models_Oct26')
 dir.create(path,recursive = T)
-source(('C:/Users/cooka/Documents/git/Framework_LFA33_34_41/3.STModel/setupMultimodelTable.r'))
-
-models = c('m1','m3','m5','m6')
+#source(('C:/Users/cooka/Documents/git/Framework_LFA33_34_41/3.STModel/setupMultimodelTable.r'))
+ source('/home/cooka@ENT/git/Framework33_34_41/3.STModel/setupMultimodelTable.r')
+models = c('m1','m2','m3','m4','m5','m6')
 ################################################################################################################################
 if('m1' %in% models){
   mod.label <- "m1" 
@@ -76,12 +78,12 @@ if('m1' %in% models){
   m_cv <- sdmTMB_cv(
     data = or1,
     formula = Lobster ~ 0+SOURCE, 
-    offset = or1$of,
+    offset = 'of',
     mesh = bspde,
     spatial = "on",
     family =  nbinom2(),
     time = "YEAR",
-    spatiotemporal = "ar1"
+    spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
   )
@@ -108,12 +110,12 @@ if('m2' %in% models){
   m_cv <- sdmTMB_cv(
     data = or1,
     formula = Lobster ~ 0+SOURCE, 
-    offset = or1$of,
+    offset = 'of',
     mesh = bspde,
     spatial = "on",
     family =  tweedie(),
     time = "YEAR",
-    spatiotemporal = "ar1"
+    spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
   )
@@ -140,12 +142,12 @@ if('m3' %in% models){
   m_cv <- sdmTMB_cv(
     data = or1,
     formula = Lobster ~ 0+SOURCE+s(Glor), 
-    offset = or1$of,
+    offset = 'of',
     mesh = bspde,
     spatial = "on",
     family =  nbinom2(),
     time = "YEAR",
-    spatiotemporal = "ar1"
+    spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
   )
@@ -172,12 +174,12 @@ if('m4' %in% models){
   m_cv <- sdmTMB_cv(
     data = or1,
     formula = Lobster ~ 0+SOURCE+s(Glor), 
-    offset = or1$of,
+    offset = 'of',
     mesh = bspde,
     spatial = "on",
     family =  tweedie(),
     time = "YEAR",
-    spatiotemporal = "ar1"
+    spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
   )
@@ -204,12 +206,12 @@ if('m5' %in% models){
   m_cv <- sdmTMB_cv(
     data = or1,
     formula = Lobster ~ 0+SOURCE+s(Glor)+s(lz), 
-    offset = or1$of,
+    offset = 'of',
     mesh = bspde,
     spatial = "on",
     family =  nbinom2(),
     time = "YEAR",
-    spatiotemporal = "ar1"
+    spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
   )
@@ -236,12 +238,12 @@ if('m6' %in% models){
   m_cv <- sdmTMB_cv(
     data = or1,
     formula = Lobster ~ 0+SOURCE+s(Glor)+s(lz), 
-    offset = or1$of,
+    offset = 'of',
     mesh = bspde,
     spatial = "on",
     family =  tweedie(),
     time = "YEAR",
-    spatiotemporal = "ar1"
+    spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
   )
