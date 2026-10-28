@@ -90,31 +90,7 @@ m2 <- sdmTMB(
 )
 
 
-nd <- data.frame(
-  Glor = seq(min(survey$Glor, na.rm = TRUE),
-             max(survey$Glor, na.rm = TRUE),
-             length.out = 200),
-  SOURCE = (survey$SOURCE)[1],
-  YEAR = median(survey$YEAR),
-  X = mean(survey$X1000),
-  Y = mean(survey$Y1000),
-  of = 0
-)
-
-p <- predict(
-  m1,
-  newdata = nd,
-  re_form = NA,          # remove random fields
-  return_tmb_object = FALSE
-)
-
-library(ggplot2)
-nd$pred = m1$family$linkinv(p$est)
-ggplot(nd, aes(Glor, pred)) +
-  geom_line() 
-  
-
-s_m = simulate(m,nsim=500,type='mle-mvn')
+s_m = simulate(m2,nsim=500,type='mle-mvn')
 r_m = sdmTMB::dharma_residuals(s_m,m,return_DHARMa=T)
 plot(r_m)
 DHARMa::testResiduals(r_m)
