@@ -64,7 +64,7 @@ cv_plot(blo, surv_sf)
 
 or1$fold_id = blo$folds_ids
 
-path=file.path('Model_outputs/models_Oct26')
+path=file.path('Model_outputs/models_Oct29')
 dir.create(path,recursive = T)
 #source(('C:/Users/cooka/Documents/git/Framework_LFA33_34_41/3.STModel/setupMultimodelTable.r'))
 # source('/home/cooka@ENT/git/Framework33_34_41/3.STModel/setupMultimodelTable.r')
