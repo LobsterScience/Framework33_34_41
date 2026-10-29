@@ -16,6 +16,7 @@ require(INLA)
 options(stringAsFactors=F)
 require(PBSmapping)
 require(sf)
+require(blockCV)
 la()
 fd=file.path(project.datadirectory('Framework_LFA33_34_41'),'outputs','SURVEYS')
 setwd(fd)
@@ -55,8 +56,14 @@ survey$lz = log(survey$z)
 
 survey$IDS = "I"
 or1 = as_tibble(survey)
-or1 = cv_SpaceTimeFolds(or1,idCol = 'IDS', nfolds=5)
-path=file.path('Model_outputs/models_Oct28')
+#moving to blockCV for folds
+surv_sf <- st_as_sf(survey, coords = c("X1000", "Y1000"), crs = 32620)
+set.seed(3)
+blo <- cv_spatial(surv_sf, k = 5, size = 50)
+cv_plot(blo, surv_sf)
+
+or1$fold_id = blo$folds_ids
+path=file.path('Model_outputs/models_Oct29')
 dir.create(path,recursive = T)
 #source(('C:/Users/cooka/Documents/git/Framework_LFA33_34_41/3.STModel/setupMultimodelTable.r'))
 # source('/home/cooka@ENT/git/Framework33_34_41/3.STModel/setupMultimodelTable.r')
