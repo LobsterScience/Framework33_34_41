@@ -24,7 +24,7 @@ ggplot()+geom_sf(data=po)+geom_sf(data=subset(tps,Date=='1994-12-31'))
 tps$Month = lubridate::month(tps$Date)
 aggTemp = aggregate(gloryTemp~Month+YR+OFFAREA,data=tps,FUN=mean)
 
-saveRDS(tps,'OffshoreGlorysTemperatures_withBC.r')
+saveRDS(tps,'OffshoreGlorysTemperatures_withBC.rds')
 ggplot(subset(aggTemp,Month %in% c(3,7)),aes(YR, gloryTemp,colour=OFFAREA))+geom_point()+geom_smooth()+facet_wrap(~Month)
 
 
