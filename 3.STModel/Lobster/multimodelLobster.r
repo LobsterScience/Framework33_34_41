@@ -28,12 +28,13 @@ aT = a[[1]]
 bB = a[[2]]
 cC = a[[3]]
 
-aT = subset(aT,SOURCE %ni% 'MNR' & lubridate::month(DATE)%in% c(6,7,8))
+aT = subset(aT,SOURCE %ni% c('MNR','NEFSC_RV') & lubridate::month(DATE)%in% c(6,7,8))
 
 sf_use_s2(FALSE) #needed for cropping
 aT$X1000 <- st_coordinates(aT)[,1]
 aT$Y1000 <- st_coordinates(aT)[,2]
 
+	
 survey = as_tibble(subset(aT,z>0 & !is.na(Lobster)))
 survey$of = log(as.numeric(survey$OFFSET))
 
