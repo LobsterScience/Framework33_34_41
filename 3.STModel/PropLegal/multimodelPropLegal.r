@@ -28,17 +28,20 @@ aT = a[[1]]
 bB = a[[2]]
 cC = a[[3]]
 
-aT= subset(aT,SOURCE %ni% c('MNR','NEFSC_RV') & lubridate::month(DATE)%in% c(6,7,8) & !is.na(Legal) & z>0 & !is.na(Lobster))
+#aT= subset(aT,SOURCE %ni% c('MNR','NEFSC_RV') & lubridate::month(DATE)%in% c(6,7,8) & !is.na(Legal) & z>0 & !is.na(Lobster))
+aT= subset(aT,SOURCE %ni% c('MNR') & !is.na(Legal) & z>0 & !is.na(Lobster) & z<500)
 #accounting for rounding with the coverserions
 
 sf_use_s2(FALSE) #needed for cropping
 aT$X1000 <- st_coordinates(aT)[,1]
 aT$Y1000 <- st_coordinates(aT)[,2]
+aT <- st_crop( aT, xmin = 124, xmax = 665, ymin = 4540, ymax = 5094)
 
 survey = as_tibble(aT)
 survey$of = log(as.numeric(survey$OFFSET))
 ii = which(survey$Legal >= survey$Lobster)
 survey$Lobster[ii] = survey$Legal[ii]
+
 
 spde <- make_mesh(survey, xy_cols = c("X1000", "Y1000"),
                   cutoff = 12)
@@ -64,11 +67,11 @@ cv_plot(blo, surv_sf)
 
 or1$fold_id = blo$folds_ids
 
-path=file.path('Model_outputs/models_Oct29')
+path=file.path('Model_outputs/models_Nov2_seasons')
 dir.create(path,recursive = T)
 #source(('C:/Users/cooka/Documents/git/Framework_LFA33_34_41/3.STModel/setupMultimodelTable.r'))
 # source('/home/cooka@ENT/git/Framework33_34_41/3.STModel/setupMultimodelTable.r')
-models = c('m1','m3','m5')
+models = c('m1','m3','m5','m6')
 ################################################################################################################################
 if('m1' %in% models){
   mod.label <- "m1" 
@@ -136,10 +139,10 @@ if('m3' %in% models){
 }
 
 if('m5' %in% models){
-  mod.label <- "m5" 
+  mod.label <- "m5"
   m <- sdmTMB(
     data = or1,
-    formula = cbind(Legal,Lobster-Legal) ~ 0+SOURCE+s(Glor)+s(lz), 
+    formula = cbind(Legal,Lobster-Legal) ~ 0+SOURCE+s(Glor)+s(lz),
     offset = or1$of,
     mesh = bspde,
     spatial = "on",
@@ -147,10 +150,10 @@ if('m5' %in% models){
     time = "YEAR",
     spatiotemporal = "ar1"
   )
-  
+
   m_cv <- sdmTMB_cv(
     data = or1,
-    formula = cbind(Legal,Lobster-Legal) ~ 0+SOURCE+s(Glor)+s(lz), 
+    formula = cbind(Legal,Lobster-Legal) ~ 0+SOURCE+s(Glor)+s(lz),
     offset = 'of',
     mesh = bspde,
     spatial = "on",
@@ -161,6 +164,37 @@ if('m5' %in% models){
     k_folds = 5
   )
   m5 = m
+  ca <-sdmTMB_cv_stats(response_var = 'Legal',denom_var = 'Lobster',offset_var = 'of')
+  mod.select <- bind_rows(mod.select, ca)
+  saveRDS(m,file=file.path(path,paste0('Proplegal_',mod.label,'.rds')))
+  saveRDS(mod.select,file=file.path(path,'Proplegal_model_selection.rds'))
+}
+if('m6' %in% models){
+  mod.label <- "m6" 
+  m <- sdmTMB(
+    data = or1,
+    formula = cbind(Legal,Lobster-Legal) ~ 0+SOURCE+s(Glor)+s(lz)+s(DYEAR,bs='cc'), 
+    offset = or1$of,
+    mesh = bspde,
+    spatial = "on",
+    family =  binomial(link='logit'),
+    time = "YEAR",
+    spatiotemporal = "ar1"
+  )
+  
+  m_cv <- sdmTMB_cv(
+    data = or1,
+    formula = cbind(Legal,Lobster-Legal) ~ 0+SOURCE+s(Glor)+s(lz)+s(DYEAR,bs='cc'), 
+    offset = 'of',
+    mesh = bspde,
+    spatial = "on",
+    family =  binomial(link='logit'),
+    time = "YEAR",
+    spatiotemporal = "ar1",
+    fold_ids='fold_id',
+    k_folds = 5
+  )
+  m6 = m
   ca <-sdmTMB_cv_stats(response_var = 'Legal',denom_var = 'Lobster',offset_var = 'of')
   mod.select <- bind_rows(mod.select, ca)
   saveRDS(m,file=file.path(path,paste0('Proplegal_',mod.label,'.rds')))
