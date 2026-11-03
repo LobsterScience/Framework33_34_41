@@ -66,16 +66,8 @@ sfdat = sfdat %>%
 
 
 
-grid <- st_make_grid(
-  sfdat,
-  cellsize = cell_size
-)
-
-grid <- st_sf(
-  cell = seq_along(grid),
-  geometry = grid
-)
-
+grid <- st_make_grid(  sfdat, cellsize = cell_size)
+grid <- st_sf(  cell = seq_along(grid),  geometry = grid)
 sfdat <- st_join(  sfdat,  grid,  join = st_intersects)
 
 #map
@@ -91,10 +83,7 @@ episodes <- sfdat %>%
   ) %>%
   ungroup()
 
-#--------------------------------------------------
-# DAILY CPUE
-#--------------------------------------------------
-
+#daily cpue
 daily_dat <- episodes %>%
   group_by(cell, episode, DATE_FISHED) %>%
   summarise(
@@ -106,100 +95,33 @@ daily_dat <- episodes %>%
     cpue = catch / effort
   )
 
-#--------------------------------------------------
-# FIT ROBUST CPUE TREND WITHIN EACH EPISODE
-#--------------------------------------------------
-
-ep_split <- split(
-  daily_dat,
-  list(daily_dat$cell, daily_dat$episode),
-  drop = TRUE
-)
+#robust cpue
+ep_split <- split(daily_dat,list(daily_dat$cell, daily_dat$episode),drop = TRUE)
 
 ep_trends <- lapply(ep_split, function(x){
-  
   x <- x[order(x$DATE_FISHED), ]
-  
-  if(nrow(x) < 5) return(NULL)
-  
-  x$day <- as.numeric(
-    x$DATE_FISHED - min(x$DATE_FISHED)
-  )
-  
+   if(nrow(x) < 5) return(NULL)
+   x$day <- as.numeric(x$DATE_FISHED - min(x$DATE_FISHED))
   if(length(unique(x$cpue)) < 4) return(NULL)
-  
-  mod <- try(
-    MASS::rlm(
-      cpue ~ day,
-      data = x
-    ),
-    silent = TRUE
-  )
-  
+  mod <- try(MASS::rlm(cpue ~ day,data = x), silent = TRUE)
   if(inherits(mod, "try-error")) return(NULL)
-  
-  b <- coef(mod)
-  
-  start_cpue <- predict(
-    mod,
-    newdata = data.frame(day = 0)
-  )
-  
-  end_cpue <- predict(
-    mod,
-    newdata = data.frame(day = max(x$day))
-  )
-  
-  pct_change <- 100 *
-    (end_cpue - start_cpue) /
-    start_cpue
-  
-  data.frame(
-    cell = x$cell[1],
-    episode = x$episode[1],
-    start_date = min(x$DATE_FISHED),
-    end_date = max(x$DATE_FISHED),
-    duration_days =
-      as.numeric(max(x$DATE_FISHED) -
-                   min(x$DATE_FISHED)) + 1,
-    n_days = nrow(x),
-    slope_cpue_day = b["day"],
-    start_cpue = start_cpue,
-    end_cpue = end_cpue,
-    pct_change_cpue = pct_change
-  )
-})
+    b <- coef(mod)
+    start_cpue <- predict(mod,newdata = data.frame(day = 0))
+    end_cpue <- predict(mod,newdata = data.frame(day = max(x$day)))
+    pct_change <- 100 *(end_cpue - start_cpue) / start_cpue
+    data.frame( cell = x$cell[1], episode = x$episode[1], start_date = min(x$DATE_FISHED), end_date = max(x$DATE_FISHED), duration_days = as.numeric(max(x$DATE_FISHED) - min(x$DATE_FISHED)) + 1,
+    n_days = nrow(x),slope_cpue_day = b["day"],start_cpue = start_cpue,end_cpue = end_cpue, pct_change_cpue = pct_change)
+  })
 
-ep_trends <- rbindlist(
-  ep_trends,
-  fill = TRUE
-)
+ep_trends <- rbindlist( ep_trends, fill = TRUE)
 
-ep_trends[
-  ,
-  yr := year(start_date)
-]
+ep_trends[ , yr := year(start_date)]
 
-#--------------------------------------------------
-# YEARLY SUMMARIES
-#--------------------------------------------------
-
-annual <- ep_trends[
-  ,
-  .(
-    median_duration =
-      median(duration_days, na.rm = TRUE),
-    
-    median_slope =
-      median(slope_cpue_day, na.rm = TRUE),
-    
-    median_pct_change =
-      median(pct_change_cpue, na.rm = TRUE),
-    
-    n_episodes = .N
-  ),
-  by = yr
-]
+annual <- ep_trends[ , .(median_duration = median(duration_days, na.rm = TRUE),   
+    median_slope =   median(slope_cpue_day, na.rm = TRUE),
+    median_pct_change =median(pct_change_cpue, na.rm = TRUE),
+    n_episodes = .N),by = yr]
+  
 
 ggplot(annual,aes(x=yr,y=median_pct_change))+geom_point()+geom_path()+labs(x='Year',y= "Median % CPUE Change Before Leaving")
 
@@ -221,60 +143,29 @@ plot(
 
 search_area <- sfdat %>%
   st_drop_geometry() %>%
-  distinct(
-    fishingYear,
-    cell
-  ) %>%
+  distinct( fishingYear, cell ) %>%
   group_by(fishingYear) %>%
-  summarise(
-    n_cells = n()
-  )
+  summarise( n_cells = n() )
 
-search_area$area_km2 <-
-  search_area$n_cells *
-  (cell_size/1000)^2
+search_area$area_km2 <- search_area$n_cells * (cell_size/1000)^2
 
 occ <- leave_cpue %>%
   group_by(yr) %>%
-  summarise(
-    med_days =
-      median(duration_days),
-    mean_days =
-      mean(duration_days)
-  )
-plot(
-  med_days ~ yr,
-  data = occ,
-  type = "b"
-)
+  summarise( med_days = median(duration_days),
+    mean_days = mean(duration_days))
+
+
+plot( med_days ~ yr, data = occ, type = "b")
 
 
 episodes_per_year <- leave_cpue %>%
   group_by(yr) %>%
-  summarise(
-    n_episodes = n()
-  )
+  summarise( n_episodes = n() )
 
-plot(
-  n_episodes ~ yr,
-  data = episodes_per_year,
-  type = "b"
-)
+plot( n_episodes ~ yr, data = episodes_per_year, type = "b")
 
-search_index <- merge(
-  search_area,
-  episodes_per_year,
-  by.x="fishingYear",
-  by.y="yr"
-)
+search_index <- merge(  search_area,  episodes_per_year, by.x="fishingYear",  by.y="yr")
 
-search_index <- merge(
-  search_index,
-  occ,
-  by.x="fishingYear",
-  by.y="yr"
-)
+search_index <- merge( search_index, occ, by.x="fishingYear", by.y="yr")
 
-search_index$searching_index <-
-  search_index$n_episodes /
-  search_index$med_days
+search_index$searching_index <- search_index$n_episodes /  search_index$med_days
