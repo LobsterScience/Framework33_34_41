@@ -28,7 +28,7 @@ aT = a[[1]]
 bB = a[[2]]
 cC = a[[3]]
 
-aT = subset(aT,SOURCE %ni% c('MNR','NEFSC_RV') & lubridate::month(DATE)%in% c(6,7,8))
+aT = subset(aT,SOURCE %ni% c('MNR'))
 
 sf_use_s2(FALSE) #needed for cropping
 aT$X1000 <- st_coordinates(aT)[,1]
@@ -293,4 +293,36 @@ if('m6' %in% models){
   mod.select <- bind_rows(mod.select,ca)
   saveRDS(m,file=file.path(path,paste0('totlobster_',mod.label,'.rds')))
   saveRDS(mod.select,file=file.path(path,'totlobster_model_selection.rds'))
+}
+
+if('m5' %in% models){
+  mod.label <- "m5" 
+  m <- sdmTMB(
+    data = or1,
+    formula = Lobster ~ 0+SOURCE+s(Glor)+s(lz)+s(LYEAR,'cc'), 
+    offset = or1$of,
+    mesh = bspde,
+    spatial = "on",
+    family =  nbinom2(),
+    time = "YEAR",
+    spatiotemporal = "ar1"
+  )
+  
+  m_cv <- sdmTMB_cv(
+    data = or1,
+    formula = Lobster ~ 0+SOURCE+s(Glor)+s(lz)+s(LYEAR,'cc'), 
+    offset = 'of',
+    mesh = bspde,
+    spatial = "on",
+    family =  nbinom2(),
+    time = "YEAR",
+    spatiotemporal = "ar1",
+    fold_ids='fold_id',
+    k_folds = 5
+  )
+  m5 = m
+  ca <-sdmTMB_cv_stats(response_var = 'Lobster',offset_var = 'of')
+  mod.select <-(ca)
+  saveRDS(m,file=file.path(path,paste0('totlobster_',mod.label,'.rds')))
+  saveRDS(mod.select,file=file.path(path,'totlobster_model_selection_seasonality.rds'))
 }
