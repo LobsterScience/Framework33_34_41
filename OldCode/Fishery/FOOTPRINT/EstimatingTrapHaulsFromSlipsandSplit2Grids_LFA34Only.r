@@ -149,3 +149,25 @@ cog_year <- rlc %>%
     n_cells = n_distinct(GRID_NO),
     .groups = "drop"
   )
+
+ggplot(cog_year,aes(cog_lon, cog_lat))+geom_point()+geom_path()
+library(ggrepel)
+yrs <- sort(unique(cog_year$SYEAR))
+
+lab_yrs <- yrs[
+  ((yrs - min(yrs)) %% 5 == 0) |
+    yrs == max(yrs)
+]
+
+labs <- subset(cog_year, SYEAR %in% lab_yrs)
+ggplot(cog_year, aes(cog_lon, cog_lat)) +
+  geom_path() +
+  geom_point() +
+  geom_text_repel(
+    data = labs,
+    aes(label = SYEAR)
+  )
+
+
+v+geom_path(data=cog_year,aes(x=cog_lon,y=cog_lat),col='red')
+ 

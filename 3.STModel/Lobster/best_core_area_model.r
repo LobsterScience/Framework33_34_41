@@ -121,9 +121,24 @@ ff$SOURCE='ILTS'
 f = as_tibble(ff)
 f$lz = log(f$z)
 
-f34 = subset(f,LFA==34 &z>=50)
+f34 = subset(f,LFA==34 &z>=5)
 g34 = predict(m,newdata=f34,return_tmb_object = T)
+cog34 = get_cog(g34,bias_correct = T)
+wcog34 <- cog34 |>
+  pivot_wider(
+    id_cols = c(YEAR, type),
+    names_from = coord,
+    values_from = c(est, lwr, upr, se),
+    names_glue = "{coord}_{.value}"
+  )
+
 ind34g50 = get_index(g34,bias_correct = T)
+
+a = lm(est_y~est_x,data=cog34)
+
+b = lm(Y~X,data=coy)
+
+
  ggplot(subset(ind34g50),aes(x=YEAR,y=est,ymin=lwr,ymax=upr)+geom_point()+geom_line()+geom_ribbon(alpha=.25)+theme_test(base_size = 14)+labs(x='Year',y='Commercial Abundance (x000) ')
 
 f41 = subset(f,LFA==41 & z>=5)

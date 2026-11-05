@@ -22,7 +22,9 @@ a4$DOY = lubridate::yday(a4$FV_FISHED_DATETIME)
 a4$WEIGHT_KG = a4$ADJCATCH_KG
 u4 = unique(a4$ID)
 
-gr = readRDS(file.path(git.repo,'bio.lobster.data','mapping_data','GridPolys_DepthPruned_37Split.rds'))
+layerDir=file.path(project.datadirectory("bio.lobster"), "data","maps")
+r<-readRDS(file.path( layerDir,"GridPolysSF.rds"))
+gr = st_as_sf(r)
 gr41 = st_as_sf(readRDS(file.path(git.repo,'bio.lobster.data','mapping_data','LFA41_grid_polys.rds')))
 coa = st_as_sf(readRDS(file.path(git.repo,'bio.lobster.data','mapping_data','CoastSF.rds')))
 coa= st_make_valid(coa)
@@ -147,6 +149,6 @@ l4 = dplyr::bind_rows(lan,l4)
 
 l4g = merge(l4,gall)
 
-saveRDS(l4g,'Landings_byGrid_year.rds')
+saveRDS(l4g,'Landings_byGrid_year_allLFAs.rds')
 
 

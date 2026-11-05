@@ -68,7 +68,8 @@ path=file.path('Model_outputs/models_Nov2')
 dir.create(path,recursive = T)
 #source(('C:/Users/cooka/Documents/git/Framework_LFA33_34_41/3.STModel/setupMultimodelTable.r'))
 # source('/home/cooka@ENT/git/Framework33_34_41/3.STModel/setupMultimodelTable.r')
-models = c('m1','m3','m5')
+#models = c('m1','m3','m5')
+models = 'm7'
 ################################################################################################################################
 if('m1' %in% models){
   mod.label <- "m1" 
@@ -295,8 +296,8 @@ if('m6' %in% models){
   saveRDS(mod.select,file=file.path(path,'totlobster_model_selection.rds'))
 }
 
-if('m5' %in% models){
-  mod.label <- "m5" 
+if('m7' %in% models){
+  mod.label <- "m7" 
   m <- sdmTMB(
     data = or1,
     formula = Lobster ~ 0+SOURCE+s(Glor)+s(lz)+s(LYEAR,'cc'), 
@@ -320,7 +321,7 @@ if('m5' %in% models){
     fold_ids='fold_id',
     k_folds = 5
   )
-  m5 = m
+  m7 = m
   ca <-sdmTMB_cv_stats(response_var = 'Lobster',offset_var = 'of')
   mod.select <-(ca)
   saveRDS(m,file=file.path(path,paste0('totlobster_',mod.label,'.rds')))
