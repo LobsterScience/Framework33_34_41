@@ -72,10 +72,10 @@ a$DATE = NA
 x = read.csv(file.path(project.datadirectory('bio.lobster'),'data','inputs','Tagging','crtags.csv'))
 x1 = subset(x,select=c('TAGNUM','TAGTYPE','RELDATE','RLAT','RLON','RCLMMS','RSEX','REGG'))
 x2 =subset(x,select=c('TAGNUM','TAGTYPE','CAPDATE','CLAT','CLON','CAPCLMMS','CAPSEX','CAPEGG'))
-x1$RelCap = 'Rel'
-x2$RelCap = 'Cap'
+x1$Relcap = 'Rel'
+x2$Relcap = 'Cap'
 
-names(x1) = names(x2) = c('TAGNUM','TAGTYPE','DATE','LAT','LON','CL','SEX','EGG','RelCap')
+names(x1) = names(x2) = c('TAGNUM','TAGTYPE','DATE','LAT','LON','CL','SEX','EGG','Relcap')
 
 xa = bind_rows(x1,x2)
 xa$TAGNUM = as.character(xa$TAGNUM)
@@ -94,7 +94,7 @@ xas = subset(cc,is.na(COUNTRY))
 xas$DATE = as.Date(xas$DATE)
 xasu=st_transform(xas,crs=32620)
 xasu$Tags = paste(xasu$Source,xasu$TAGNUM,xasu$TAGTYPE,sep="-")
-xx = subset(xasu, select=c(Tags, DATE, SEX, EGG,CL, RelCap))
+xx = subset(xasu, select=c(Tags, DATE, SEX, EGG,CL, Relcap))
 tt <- table(xx$Tags)
 xx <- subset(xx, Tags %in% names(tt[tt >= 2]))
 
@@ -166,15 +166,15 @@ paired_data <- pcc %>%
   summarise(
     release = first(geometry),
   recapture = last(geometry),
-#    release_date = first(DATE),
-#    recapture_date = last(DATE),
+    release_date = first(DATE),
+    recapture_date = last(DATE),
     distance_km = st_distance(first(geometry), last(geometry), by_element = TRUE) / 1000,  # Convert to km
-#    release_distance_to_shore = min(st_distance(first(geometry),cou)),
- #  recapture_distance_to_shore = min(st_distance(last(geometry),cou)),
+    release_distance_to_shore = min(st_distance(first(geometry),cou)),
+  recapture_distance_to_shore = min(st_distance(last(geometry),cou)),
    duration_days = as.numeric(last(DATE) - first(DATE)),  # Time difference in days
-   # direction = bearing(st_coordinates(first(geometry)), st_coordinates(last(geometry)))  # Calculate bearing
+# direction = bearing(st_coordinates(first(geometry)), st_coordinates(last(geometry)))  # Calculate bearing
   )
-
+saveRDS(paired_data,'tagging_summary.rds')
 
 #allocate mark to LFAs
 po$Id = po$LFA
@@ -232,12 +232,36 @@ bmap+
 
 i = which(sPd$Mark_ID==35 & sPd$Recap_ID==27)
 sPd = sPd[-i,]
-ggplot(subset(sPd,Mark_ID %in% c(27,29,30,311,312,32,33,34,35,36,37,38,40,41) ),aes(x=Mark_ID,y=Recap_ID,fill=N_Recaptures))+
+i = which(sPd$Mark_ID==34 & sPd$Recap_ID==27)
+sPd = sPd[-i,]
+
+dat <- subset(sPd,Mark_ID %in% c(27,29,30,311,312,32,33,34,35,36,38,40,41) & Recap_ID %ni% 37)
+
+dat$self_seed <- dat$Mark_ID == dat$Recap_ID
+
+ggplot(dat, aes(Mark_ID, Recap_ID, fill = N_Recaptures)) +
+  geom_raster() +
+  geom_tile(
+    data = subset(dat, self_seed),
+    fill = NA,
+    colour = "red",
+    linewidth = 1.2
+  ) +
+    scale_fill_viridis_c(
+    trans = "log",
+    breaks = c(1,10,50,400,3000),
+    labels = scales::label_number(accuracy = 1)
+  ) +
+  theme_test(base_size = 14) +
+  labs(x = "Release LFA", y = "Recapture Fishing Area")
+
+
+ggplot(subset(sPd,Mark_ID %in% c(27,29,30,311,312,32,33,34,35,36,38,40,41)  & Recap_ID %ni% 37),aes(x=Mark_ID,y=Recap_ID,fill=N_Recaptures))+
   scale_fill_viridis_c(trans='log', breaks=c(1,10,50,400,3000), labels = scales::label_number(accuracy = 1))+
   geom_raster()+
   theme_test(base_size = 14)+
 labs(x='Release LFA', y='Recapture Fishing Area')
-
+ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/FiguresTables/Mark_RecaptureLFAs.png')
 
 pos = po
 # Compute centroids
@@ -258,6 +282,7 @@ ggplot() +
                               label = label), size = 2, color = "black") +
   
   theme_test_adam()
+ggsave('C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/FiguresTables/TaggingLocationMap.png')
 
 
 ###LFA 38B
