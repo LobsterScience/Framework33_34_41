@@ -60,8 +60,8 @@ or1 = as_tibble(survey)
 #moving to blockCV for folds
 surv_sf <- st_as_sf(survey, coords = c("X1000", "Y1000"), crs = 32620)
 set.seed(3)
-blo <- cv_spatial(surv_sf, k = 5, size = 50)
-cv_plot(blo, surv_sf)
+blo <- cv_spatial(surv_sf, k = 5, size = 50,plot=F)
+#cv_plot(blo, surv_sf)
 
 or1$fold_id = blo$folds_ids
 path=file.path('Model_outputs/models_Nov2')
@@ -300,23 +300,23 @@ if('m7' %in% models){
   mod.label <- "m7" 
   m <- sdmTMB(
     data = or1,
-    formula = Lobster ~ 0+SOURCE+s(Glor)+s(lz)+s(LYEAR,'cc'), 
+    formula = Lobster ~ 0+SOURCE+s(Glor)+s(lz)+s(DYEAR,bs='cc'), 
     offset = or1$of,
     mesh = bspde,
     spatial = "on",
     family =  nbinom2(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1"
   )
   
   m_cv <- sdmTMB_cv(
     data = or1,
-    formula = Lobster ~ 0+SOURCE+s(Glor)+s(lz)+s(LYEAR,'cc'), 
+    formula = Lobster ~ 0+SOURCE+s(Glor)+s(lz)+s(LYEAR,bs='cc'), 
     offset = 'of',
     mesh = bspde,
     spatial = "on",
     family =  nbinom2(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
