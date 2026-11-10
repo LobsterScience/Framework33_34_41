@@ -1,5 +1,5 @@
 
-# source('/home/cooka@ENT/git/Framework33_34_41/3.STModel/Lobster/multimodelCommercialB_coreArea.r')
+# source('/home/cooka@ENT/git/Framework33_34_41/3.STModel/CommercialB/multimodelCommercialB_coreArea.r')
 
 
 require(tidyr)
@@ -298,23 +298,22 @@ if('m7' %in% models){
   mod.label <- "m7" 
   m <- sdmTMB(
     data = or1,
-    formula = Legal_wt ~ 0+SOURCE+s(Glor)+s(lz)+s(LYEAR,'cc'), 
+    formula = Legal_wt ~ 0+SOURCE+s(Glor)+s(lz)+s(DYEAR,bs='cc'), 
     offset = or1$of,
     mesh = bspde,
     spatial = "on",
     family =  nbinom2(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1"
   )
-  
-  m_cv <- sdmTMB_cv(
+    m_cv <- sdmTMB_cv(
     data = or1,
-    formula = Legal_wt ~ 0+SOURCE+s(Glor)+s(lz)+s(LYEAR,'cc'), 
+    formula = Legal_wt ~ 0+SOURCE+s(Glor)+s(lz)+s(DYEAR,bs='cc'), 
     offset = 'of',
     mesh = bspde,
     spatial = "on",
     family =  nbinom2(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
