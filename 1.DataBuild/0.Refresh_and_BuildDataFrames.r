@@ -29,7 +29,7 @@ groundfish.db('gs_trawl_conversions_redo')
 
 #this builds the tow dist and net mensuartion stuff
 ILTS_ITQ_All_Data(redo_set_data = T, redo_base_data = T, biomass = F)  
-g = compileAbundPresAbs_vessel_corr(redo = F,size=F)
+g = compileAbundPresAbs_vessel_corr(redo = T,size=F)
 
 #glorys bias corrected model needs to be run.
 

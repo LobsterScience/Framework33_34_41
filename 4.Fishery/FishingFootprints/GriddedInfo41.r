@@ -12,6 +12,11 @@ figpath = 'C:/Users/cooka/OneDrive - DFO-MPO/LFA33_34_41_Framework/Documents/Fig
 dir.create(figpath,recursive = T)
 
 #####41
+coa = st_as_sf(readRDS(file.path(git.repo,'bio.lobster.data','mapping_data','CoastSF.rds')))
+coa= st_make_valid(coa)
+coa = subset(coa,PROVINCE=='Nova Scotia')
+coa = subset(coa,st_area(coa)==max(st_area(coa))) # remove islands and cape breton
+
 
 
 a4 = lobster.db('process.logs41')
@@ -115,6 +120,16 @@ ggplot(overlapx,aes(x=n_grids,y=LFA41))+geom_point()+geom_path()+
   geom_text_repel(data = labs,aes(label = SYEAR))+
   theme_test()
 ggsave(file.path(figpath,'NCore_2_landings41.png'))
+
+ggplot(overlapx,aes(x=SYEAR,y=n_grids))+geom_point()+geom_path()+
+  labs(x='Year',y = 'N Core Grids')+
+  theme_test(base_size = 14)
+ggsave(file.path(figpath,'NCore_41.png'))
+
+jaccard <- function(a,b){
+  length(intersect(a,b)) /
+    length(union(a,b))
+}
 
 js = (data.frame(
   YEAR = overlap$SYEAR[-1],

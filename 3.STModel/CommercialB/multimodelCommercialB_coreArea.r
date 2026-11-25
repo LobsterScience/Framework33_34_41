@@ -35,7 +35,7 @@ aT$X1000 <- st_coordinates(aT)[,1]
 aT$Y1000 <- st_coordinates(aT)[,2]
 aT <- st_crop( aT, xmin = 124, xmax = 665, ymin = 4540, ymax = 5094)
 	
-survey = as_tibble(subset(aT,z>0 & !is.na(Legal_wt) & z<500))
+survey = as_tibble(subset(aT,z>5 & !is.na(Legal_wt) & z<500))
 survey$of = log(as.numeric(survey$OFFSET))
 
 spde <- make_mesh(survey, xy_cols = c("X1000", "Y1000"),
@@ -61,14 +61,21 @@ or1 = as_tibble(survey)
 surv_sf <- st_as_sf(survey, coords = c("X1000", "Y1000"), crs = 32620)
 set.seed(3)
 blo <- cv_spatial(surv_sf, k = 5, size = 50)
-cv_plot(blo, surv_sf)
+#cv_plot(blo, surv_sf)
 
 or1$fold_id = blo$folds_ids
-path=file.path('Model_outputs/models_Nov5')
+path=file.path('Model_outputs/models_Nov25')
 dir.create(path,recursive = T)
 #source(('C:/Users/cooka/Documents/git/Framework_LFA33_34_41/3.STModel/setupMultimodelTable.r'))
 # source('/home/cooka@ENT/git/Framework33_34_41/3.STModel/setupMultimodelTable.r')
-models = c('m1','m3','m5','m7')
+models = c('m2','m4','m6','m8')
+notes <- c(
+  "no mnr",
+  "all tweedie outputs",
+  "run using block cv"
+)
+
+writeLines(notes, "notes.txt")
 ################################################################################################################################
 if('m1' %in% models){
   mod.label <- "m1" 
@@ -79,7 +86,7 @@ if('m1' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  nbinom2(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1"
   )
   
@@ -90,7 +97,7 @@ if('m1' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  nbinom2(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
@@ -110,7 +117,7 @@ if('m1d' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  delta_truncated_nbinom2(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1"
   )
   
@@ -121,7 +128,7 @@ if('m1d' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  delta_truncated_nbinom2(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
@@ -144,7 +151,7 @@ if('m2' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  tweedie(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1"
   )
   
@@ -155,7 +162,7 @@ if('m2' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  tweedie(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
@@ -176,7 +183,7 @@ if('m3' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  nbinom2(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1"
   )
   
@@ -187,7 +194,7 @@ if('m3' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  nbinom2(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
@@ -208,7 +215,7 @@ if('m4' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  tweedie(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1"
   )
   
@@ -219,7 +226,7 @@ if('m4' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  tweedie(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
@@ -240,7 +247,7 @@ if('m5' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  nbinom2(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1"
   )
   
@@ -251,7 +258,7 @@ if('m5' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  nbinom2(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
@@ -272,7 +279,7 @@ if('m6' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  tweedie(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1"
   )
   
@@ -283,7 +290,7 @@ if('m6' %in% models){
     mesh = bspde,
     spatial = "on",
     family =  tweedie(),
-    time = "YEAR",
+    time = "LYEAR",
     spatiotemporal = "ar1",
     fold_ids='fold_id',
     k_folds = 5
@@ -321,6 +328,37 @@ if('m7' %in% models){
   m7 = m
   ca <-sdmTMB_cv_stats(response_var = 'Legal_wt',offset_var = 'of')
   mod.select <- bind_rows(mod.select,ca)
+  saveRDS(m,file=file.path(path,paste0('totLegal_wt_',mod.label,'.rds')))
+  saveRDS(mod.select,file=file.path(path,'totLegal_wt_model_selection.rds'))
+}
+
+if('m8' %in% models){
+  mod.label <- "m8" 
+  m <- sdmTMB(
+    data = or1,
+    formula = Legal_wt ~ 0+SOURCE+s(Glor)+s(lz)+s(DYEAR,bs='cc'), 
+    offset = or1$of,
+    mesh = bspde,
+    spatial = "on",
+    family =  tweedie(),
+    time = "LYEAR",
+    spatiotemporal = "ar1"
+  )
+  
+  m_cv <- sdmTMB_cv(
+    data = or1,
+    formula = Legal_wt ~ 0+SOURCE+s(Glor)+s(lz)+s(DYEAR,bs='cc'), 
+    offset = 'of',
+    mesh = bspde,
+    spatial = "on",
+    family =  tweedie(),
+    time = "LYEAR",
+    spatiotemporal = "ar1",
+    fold_ids='fold_id',
+    k_folds = 5
+  )
+  m8 = m
+  ca <-sdmTMB_cv_stats(response_var = 'Legal_wt',offset_var = 'of')
   saveRDS(m,file=file.path(path,paste0('totLegal_wt_',mod.label,'.rds')))
   saveRDS(mod.select,file=file.path(path,'totLegal_wt_model_selection.rds'))
 }

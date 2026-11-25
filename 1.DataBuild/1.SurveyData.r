@@ -36,5 +36,13 @@ g = subset(g,SOURCE %in% c('ILTS','DFO_RV','NEFSC_RV','Snow Crab survey','Scallo
 
 ois = readRDS(file=file.path(bio.lobster::project.datadirectory('bio.lobster.glorys'),'lobsterData_withGlorys_oct19.rds'))
 
+####adding in temp to existing object 
+####
+g = compileAbundPresAbs_vessel_corr(redo = F,size=F) #turn to redo=T for a new run
+g = subset(g,!is.na(LATITUDE) | !is.na(LONGITUDE))
+g = subset(g,SOURCE %in% c('ILTS','DFO_RV','NEFSC_RV','Snow Crab survey','Scallop Survey','MNR'))
+ois = subset(as_tibble(ois),select=c(id,Glor,dist))
+go = merge(g,ois)
+saveRDS(go,file=file.path(bio.lobster::project.datadirectory('bio.lobster.glorys'),'lobsterData_withGlorys_nov24.rds'))
 
-
+#####
